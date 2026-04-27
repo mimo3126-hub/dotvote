@@ -15,28 +15,32 @@
 
 let cachedVoice: SpeechSynthesisVoice | null | undefined = undefined
 
-// 가장 자연스러운 음성을 위에 배치
+// 가장 자연스러운 음성을 위에 배치 (Android 우선)
 const PREFERRED_PATTERNS: RegExp[] = [
-  // iOS Premium / Enhanced (다운로드 시 거의 인간 수준)
+  // Android Chrome — Google 한국어 (네트워크 통한 WaveNet 수준, 가장 흔함)
+  /Google.*한국/i,
+  /Google.*Korean/i,
+  /^ko-KR.*Google/i,
+  // Samsung 기기 내장 음성 (One UI 6+)
+  /Samsung.*Korean/i,
+  /Samsung.*한국/i,
+  // iOS Premium / Enhanced (사용자가 다운로드한 경우, 거의 인간 수준)
   /Yuna.*Premium/i,
   /Sora.*Premium/i,
   /Yuna.*Enhanced/i,
   /Sora.*Enhanced/i,
-  // Apple 기본 한국어 음성
-  /\bYuna\b/i,
-  /\bSora\b/i,
-  /\bMinsu\b/i,
-  // Google (Android Chrome / Chrome OS)
-  /Google.*한국/i,
-  /Google.*Korean/i,
   // Microsoft (Windows / Edge) 뉴럴
   /Heami/i, // Microsoft Heami Online (Natural)
-  /SunHi/i, // Microsoft SunHi Online
+  /SunHi/i,
   /InJoon/i,
   /BongJin/i,
   /JiMin/i,
   /GookMin/i,
   /SeoHyeon/i,
+  // Apple 기본 한국어 음성 (Premium 미설치 시)
+  /\bYuna\b/i,
+  /\bSora\b/i,
+  /\bMinsu\b/i,
 ]
 
 function isKorean(v: SpeechSynthesisVoice): boolean {
@@ -79,7 +83,8 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
 
 function isHighQuality(voice: SpeechSynthesisVoice | null): boolean {
   if (!voice) return false
-  return /Premium|Enhanced|Neural|Natural/i.test(voice.name)
+  // Google/Samsung 한국어는 명시적 'Premium' 라벨 없어도 이미 자연스러움
+  return /Premium|Enhanced|Neural|Natural|Google|Samsung/i.test(voice.name)
 }
 
 /** 도트 찍을 때 팝 효과음 (Sine 900→200Hz + Triangle 450→110Hz) */

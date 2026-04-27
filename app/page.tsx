@@ -1,11 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? '1234'
 
 type View = 'home' | 'code' | 'pin'
+
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 
 export default function HomePage() {
   const router = useRouter()
@@ -13,6 +18,34 @@ export default function HomePage() {
   const [pin, setPin] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null)
+  const [isStandalone, setIsStandalone] = useState(false)
+
+  // Android Chrome PWA 설치 프롬프트 캡처
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      // iOS Safari
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    setIsStandalone(standalone)
+
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setInstallEvent(e as InstallPromptEvent)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function install() {
+    if (!installEvent) return
+    await installEvent.prompt()
+    const result = await installEvent.userChoice
+    if (result.outcome === 'accepted') {
+      setInstallEvent(null)
+    }
+  }
 
   function tryLogin() {
     if (pin === ADMIN_PIN) {
@@ -94,6 +127,21 @@ export default function HomePage() {
           >
             ⚙️ 진행자 (관리자)
           </button>
+
+          {/* Android Chrome PWA 설치 (이벤트 잡혔을 때만) */}
+          {installEvent && !isStandalone && (
+            <button
+              onClick={install}
+              className="px-5 py-3 rounded-2xl text-sm font-bold mt-2 anim-fade-up"
+              style={{
+                backgroundColor: 'rgba(245,203,167,.12)',
+                border: '1.5px solid rgba(245,203,167,.3)',
+                color: '#F5CBA7',
+              }}
+            >
+              📲 홈 화면에 추가하기
+            </button>
+          )}
 
           <p className="text-xs text-center mt-4" style={{ color: '#5D5248' }}>
             농어촌 마을공동체를 위한
