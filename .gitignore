@@ -1,0 +1,26 @@
+# Node
+node_modules/
+.npm
+
+# Next.js (Phase 1 빌드 시 사용)
+.next/
+out/
+build/
+
+# Vercel
+.vercel/
+
+# 환경변수
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
