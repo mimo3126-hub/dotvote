@@ -26,6 +26,11 @@ export default function ResultsPage() {
   const [savingAnalog, setSavingAnalog] = useState(false)
   const [closing, setClosing] = useState(false)
   const [reconnects, setReconnects] = useState(0)
+  const [minutesMode, setMinutesMode] = useState(false)
+  const [minutesNotes, setMinutesNotes] = useState('')
+  const [minutesNextSteps, setMinutesNextSteps] = useState('')
+  const [minutesAttendees, setMinutesAttendees] = useState('')
+  const [downloadingMinutes, setDownloadingMinutes] = useState(false)
   const supabaseRef = useRef(createClient())
 
   // 룸 + 투표안 로드
@@ -179,6 +184,117 @@ export default function ResultsPage() {
     location.reload()
   }
 
+  async function downloadMinutes() {
+    setDownloadingMinutes(true)
+    try {
+      const res = await fetch(`/api/minutes/${room.room_code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: minutesNotes,
+          nextSteps: minutesNextSteps,
+          attendees: minutesAttendees,
+        }),
+      })
+      if (!res.ok) {
+        alert('회의록 생성 실패: ' + (await res.text()))
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `dotvote-minutes-${room.room_code}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloadingMinutes(false)
+    }
+  }
+
+  if (minutesMode) {
+    return (
+      <main className="min-h-screen p-6 max-w-3xl mx-auto pb-32">
+        <h1 className="text-elder-2xl font-bold mb-2">📝 회의록 PDF 만들기</h1>
+        <p className="text-elder-sm text-gray-600 mb-6">
+          주제 · 날짜 · 투표 결과는 자동으로 채워집니다. 토론 내용과 다음 단계만 입력하세요.
+          비워두면 "(기록 없음)" 으로 표시됩니다.
+        </p>
+
+        <div className="space-y-5">
+          <div>
+            <label className="block text-elder-base font-bold mb-2">
+              참여자 수{' '}
+              <span className="text-elder-sm font-normal text-gray-500">(선택)</span>
+            </label>
+            <input
+              type="text"
+              value={minutesAttendees}
+              onChange={(e) => setMinutesAttendees(e.target.value)}
+              placeholder="예: 12명 (어르신 8 + 진행자 2 + 청년 2)"
+              className="input-large"
+              maxLength={80}
+            />
+          </div>
+
+          <div>
+            <label className="block text-elder-base font-bold mb-2">
+              토론 내용{' '}
+              <span className="text-elder-sm font-normal text-gray-500">
+                (자유 메모, 회의 중 정리)
+              </span>
+            </label>
+            <textarea
+              value={minutesNotes}
+              onChange={(e) => setMinutesNotes(e.target.value)}
+              placeholder="예: 1순위 항목에 대해 이장님께서 예산 확보 가능성을 언급. 2순위는 마을 청년회가 자원봉사로 진행 가능하다는 의견."
+              className="input-large resize-y"
+              rows={6}
+              maxLength={3000}
+            />
+          </div>
+
+          <div>
+            <label className="block text-elder-base font-bold mb-2">
+              다음 단계 / 합의 사항
+            </label>
+            <textarea
+              value={minutesNextSteps}
+              onChange={(e) => setMinutesNextSteps(e.target.value)}
+              placeholder={
+                '예:\n· 다음 회의 일정: 2026년 5월 10일 (화) 오후 2시\n· 1순위 안건은 군청 담당자에게 5월 5일까지 제출\n· 이장: 마을 방송으로 결과 공유'
+              }
+              className="input-large resize-y"
+              rows={5}
+              maxLength={2000}
+            />
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4">
+          <div className="max-w-3xl mx-auto flex gap-3">
+            <button
+              onClick={() => setMinutesMode(false)}
+              className="btn-secondary flex-1"
+              disabled={downloadingMinutes}
+            >
+              뒤로
+            </button>
+            <button
+              onClick={downloadMinutes}
+              className="btn-primary flex-1"
+              disabled={downloadingMinutes}
+            >
+              {downloadingMinutes ? '생성 중…' : '📄 PDF 다운로드'}
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   if (analogMode) {
     return (
       <main className="min-h-screen p-6 max-w-3xl mx-auto pb-32">
@@ -261,9 +377,12 @@ export default function ResultsPage() {
           <p className="text-elder-sm text-gray-500">참여 코드 {room.room_code} · {room.topic}</p>
           <h1 className="text-elder-3xl font-bold text-blue-900">{ballot.title}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => setAnalogMode(true)} className="btn-secondary">
             📋 종이 카운트 입력
+          </button>
+          <button onClick={() => setMinutesMode(true)} className="btn-secondary">
+            📝 회의록 PDF
           </button>
           {!room.is_closed && (
             <button onClick={closeVoting} disabled={closing} className="btn-danger">
