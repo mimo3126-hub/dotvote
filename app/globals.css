@@ -86,55 +86,16 @@
 }
 
 @layer base {
-  :root {
-    --color-primary: #1e3a8a;
-    --color-primary-dark: #0f172a;
-    --color-bg: #ffffff;
-    --color-text: #111827;
-  }
-
-  html {
-    -webkit-text-size-adjust: 100%;
-  }
-
+  html { -webkit-text-size-adjust: 100%; }
   body {
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: #1E1A14;
+    color: #F0EBE3;
     font-family:
       -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard',
       'Malgun Gothic', sans-serif;
   }
-
-  /* WCAG AAA: 폼 요소 큰 터치 영역 */
-  button,
-  input,
-  select {
+  button, input, select, textarea {
     font-size: inherit;
     min-height: 44px;
-  }
-}
-
-@layer components {
-  .btn-primary {
-    @apply bg-blue-900 text-white font-bold rounded-xl px-8 py-5
-           min-h-touch text-elder-lg transition-colors
-           hover:bg-blue-800 active:bg-blue-950
-           disabled:bg-gray-400 disabled:cursor-not-allowed;
-  }
-
-  .btn-secondary {
-    @apply bg-white text-blue-900 font-bold rounded-xl px-8 py-5
-           min-h-touch text-elder-lg border-2 border-blue-900
-           transition-colors hover:bg-blue-50;
-  }
-
-  .btn-danger {
-    @apply bg-red-700 text-white font-bold rounded-xl px-6 py-4
-           min-h-touch transition-colors hover:bg-red-800;
-  }
-
-  .input-large {
-    @apply w-full text-elder-lg px-5 py-4 rounded-xl border-2
-           border-gray-300 focus:border-blue-900 focus:outline-none;
   }
 }
