@@ -1,26 +1,57 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { QRCodeCanvas } from 'qrcode.react'
 import Link from 'next/link'
-import type { Ballot, BallotOption } from '@/lib/types/ballot'
+import { colorFor } from '@/lib/utils/option-colors'
+import type { Ballot } from '@/lib/types/ballot'
 
-type Step = 'topic' | 'generating' | 'preview' | 'manual' | 'created'
+type Phase = 'setup' | 'creating' | 'created'
 
-export default function NewWorkshopPage() {
-  const [step, setStep] = useState<Step>('topic')
+interface ItemDraft {
+  label: string
+  description: string
+}
+
+const INITIAL_ITEMS: ItemDraft[] = [
+  { label: '', description: '' },
+  { label: '', description: '' },
+  { label: '', description: '' },
+]
+
+export default function FacilitatorNewPage() {
+  const router = useRouter()
+  const [phase, setPhase] = useState<Phase>('setup')
   const [topic, setTopic] = useState('')
-  const [ballot, setBallot] = useState<Ballot | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [roomCode, setRoomCode] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [items, setItems] = useState<ItemDraft[]>(INITIAL_ITEMS)
+  const [dots, setDots] = useState(5)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [createError, setCreateError] = useState('')
+  const [roomCode, setRoomCode] = useState('')
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault()
-    if (topic.trim().length < 3) return
-    setError(null)
-    setStep('generating')
+  function patchItem(i: number, patch: Partial<ItemDraft>) {
+    setItems((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+  }
 
+  function addItem() {
+    if (items.length >= 9) return
+    setItems((prev) => [...prev, { label: '', description: '' }])
+  }
+
+  function removeItem(i: number) {
+    if (items.length <= 2) return
+    setItems((prev) => prev.filter((_, j) => j !== i))
+  }
+
+  async function fillWithAi() {
+    if (topic.trim().length < 3) {
+      setAiError('주제를 먼저 입력하세요')
+      return
+    }
+    setAiLoading(true)
+    setAiError('')
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -29,367 +60,340 @@ export default function NewWorkshopPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? '알 수 없는 오류')
-        setStep('manual')
+        setAiError(data.error ?? 'AI 생성 실패 — 직접 입력하세요')
         return
       }
-      setBallot(data.ballot)
-      setStep('preview')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'AI 호출 실패')
-      setStep('manual')
+      const ballot: Ballot = data.ballot
+      setItems(
+        ballot.options.map((o) => ({
+          label: o.label,
+          description: o.description ?? '',
+        })),
+      )
+      setDots(ballot.total_dots)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'AI 호출 실패')
+    } finally {
+      setAiLoading(false)
     }
   }
 
-  async function handleCreateRoom() {
-    if (!ballot) return
-    setCreating(true)
-    setError(null)
+  async function startSession() {
+    const valid = items
+      .map((it) => ({ label: it.label.trim(), description: it.description.trim() }))
+      .filter((it) => it.label.length > 0)
+
+    if (!topic.trim()) {
+      setCreateError('투표 주제를 입력하세요')
+      return
+    }
+    if (valid.length < 2) {
+      setCreateError('항목을 2개 이상 입력하세요')
+      return
+    }
+
+    setCreateError('')
+    setPhase('creating')
+
+    const ballot: Ballot = {
+      title: topic.trim(),
+      options: valid.map((o, i) => ({
+        id: `opt${i + 1}`,
+        label: o.label,
+        description: o.description || undefined,
+      })),
+      total_dots: dots,
+    }
+
     try {
       const res = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, ballot }),
+        body: JSON.stringify({ topic: topic.trim(), ballot }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error)
-        setCreating(false)
+        setCreateError(data.error ?? '룸 생성 실패')
+        setPhase('setup')
         return
       }
       setRoomCode(data.room_code)
-      setStep('created')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '룸 생성 실패')
-    } finally {
-      setCreating(false)
+      setPhase('created')
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : '룸 생성 실패')
+      setPhase('setup')
     }
   }
 
-  if (step === 'topic') {
+  // ──── CREATING ────
+  if (phase === 'creating') {
     return (
-      <main className="min-h-screen p-6 max-w-2xl mx-auto">
-        <Link href="/" className="text-blue-700 text-elder-sm">← 처음으로</Link>
-        <h1 className="text-elder-2xl font-bold text-blue-900 mt-4 mb-2">새 워크숍 만들기</h1>
-        <p className="text-elder-sm text-gray-600 mb-8">
-          주제를 한 줄로 적으면 AI가 투표 질문과 선택지를 만들어드립니다.
-        </p>
-
-        <form onSubmit={handleGenerate} className="space-y-6">
-          <div>
-            <label htmlFor="topic" className="block text-elder-base font-bold mb-2">
-              워크숍 주제
-            </label>
-            <input
-              id="topic"
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="예: 마을 진입로 정비 우선순위"
-              className="input-large"
-              maxLength={200}
-              required
-            />
-            <p className="text-elder-sm text-gray-500 mt-2">3–200자</p>
-          </div>
-
-          <button type="submit" className="btn-primary w-full" disabled={topic.trim().length < 3}>
-            AI로 투표안 만들기
-          </button>
-        </form>
-      </main>
+      <Shell>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 p-6">
+          <div className="w-16 h-16 rounded-full border-4 border-amber-200/20 border-t-amber-200 animate-spin" />
+          <p className="text-lg font-bold text-amber-100">워크숍 만드는 중…</p>
+        </div>
+      </Shell>
     )
   }
 
-  if (step === 'generating') {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="inline-block w-16 h-16 border-4 border-blue-200 border-t-blue-900 rounded-full animate-spin" />
-          <p className="text-elder-lg font-bold">AI가 투표안을 만들고 있어요…</p>
-          <p className="text-elder-sm text-gray-500">최대 15초 소요</p>
-        </div>
-      </main>
-    )
-  }
-
-  if (step === 'manual') {
-    return (
-      <ManualBallotEditor
-        topic={topic}
-        initialError={error}
-        onSubmit={(b) => {
-          setBallot(b)
-          setStep('preview')
-        }}
-        onCancel={() => setStep('topic')}
-      />
-    )
-  }
-
-  if (step === 'preview' && ballot) {
-    return (
-      <main className="min-h-screen p-6 max-w-3xl mx-auto pb-24">
-        <button
-          onClick={() => setStep('topic')}
-          className="text-blue-700 text-elder-sm mb-4"
-        >
-          ← 다시 만들기
-        </button>
-        <h1 className="text-elder-2xl font-bold mb-2">{ballot.title}</h1>
-        {ballot.description && (
-          <p className="text-elder-base text-gray-700 mb-6">{ballot.description}</p>
-        )}
-
-        <div className="space-y-3 mb-8">
-          {ballot.options.map((opt, idx) => (
-            <div key={opt.id} className="border-2 border-gray-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <span className="bg-blue-900 text-white rounded-full w-9 h-9 flex items-center justify-center font-bold flex-shrink-0">
-                  {idx + 1}
-                </span>
-                <div className="flex-1">
-                  <h3 className="text-elder-base font-bold">{opt.label}</h3>
-                  {opt.description && (
-                    <p className="text-elder-sm text-gray-600 mt-1">{opt.description}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-blue-50 rounded-xl p-4 mb-6">
-          <p className="text-elder-base">
-            1인당 도트 <strong>{ballot.total_dots}개</strong>
-          </p>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => setStep('manual')}
-            className="btn-secondary flex-1"
-          >
-            수정하기
-          </button>
-          <button
-            type="button"
-            onClick={handleCreateRoom}
-            disabled={creating}
-            className="btn-primary flex-1"
-          >
-            {creating ? '만드는 중…' : '워크숍 시작'}
-          </button>
-        </div>
-      </main>
-    )
-  }
-
-  if (step === 'created' && roomCode) {
-    const baseUrl =
-      typeof window !== 'undefined' ? window.location.origin : ''
+  // ──── CREATED ────
+  if (phase === 'created') {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const voteUrl = `${baseUrl}/vote/${roomCode}`
-    const resultsUrl = `/results/${roomCode}`
-    const sheetsUrl = `/sheets/${roomCode}`
-
     return (
-      <main className="min-h-screen p-6 max-w-2xl mx-auto">
-        <h1 className="text-elder-2xl font-bold text-blue-900 mb-6">워크숍이 시작되었습니다</h1>
+      <Shell>
+        <div className="p-5 anim-fade-up">
+          <div className="flex items-center gap-2 mb-5">
+            <span className="text-3xl anim-bounce" aria-hidden>
+              🎉
+            </span>
+            <h1 className="text-xl font-black text-amber-100">워크숍 시작!</h1>
+          </div>
 
-        <div className="bg-blue-900 text-white rounded-2xl p-8 text-center mb-6">
-          <p className="text-elder-base opacity-80 mb-2">참여 코드</p>
-          <p className="text-[80px] font-bold tracking-[0.3em] leading-none">{roomCode}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6 flex flex-col items-center">
-          <p className="text-elder-sm text-gray-600 mb-3">QR 또는 주소</p>
-          <QRCodeCanvas value={voteUrl} size={200} />
-          <p className="text-elder-sm mt-3 break-all text-center">{voteUrl}</p>
-        </div>
-
-        <div className="space-y-3">
-          <Link href={resultsUrl} className="btn-primary block text-center">
-            📊 결과 화면 열기 (빔프로젝터용)
-          </Link>
-          <a
-            href={sheetsUrl}
-            target="_blank"
-            rel="noopener"
-            className="btn-secondary block text-center"
+          <div
+            className="rounded-3xl p-6 text-center mb-5"
+            style={{ backgroundColor: '#C0392B', boxShadow: '0 12px 32px rgba(192,57,43,.45)' }}
           >
-            🖨 인쇄 시트 다운로드 (PDF)
-          </a>
-          <Link href={`/vote/${roomCode}`} className="btn-secondary block text-center">
-            📱 투표 화면 미리보기
-          </Link>
+            <p className="text-white/70 text-base mb-2">참여 코드</p>
+            <p
+              className="text-white font-black leading-none"
+              style={{ fontSize: 76, letterSpacing: 10 }}
+            >
+              {roomCode}
+            </p>
+          </div>
+
+          <div
+            className="rounded-2xl p-5 mb-5 flex flex-col items-center"
+            style={{ backgroundColor: 'rgba(255,255,255,.06)' }}
+          >
+            <p className="text-amber-200/60 text-sm mb-3">QR 또는 주소</p>
+            <div className="bg-white p-3 rounded-xl">
+              <QRCodeCanvas value={voteUrl} size={180} />
+            </div>
+            <p className="text-amber-200/80 text-sm mt-3 break-all text-center">{voteUrl}</p>
+          </div>
+
+          <div className="space-y-3">
+            <Link
+              href={`/results/${roomCode}`}
+              className="block w-full py-4 rounded-2xl text-white text-lg font-bold text-center"
+              style={{ backgroundColor: '#1A5276' }}
+            >
+              📊 결과 화면 (빔프로젝터용)
+            </Link>
+            <a
+              href={`/sheets/${roomCode}`}
+              target="_blank"
+              rel="noopener"
+              className="block w-full py-4 rounded-2xl text-lg font-bold text-center"
+              style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+            >
+              🖨 인쇄 시트 PDF
+            </a>
+            <Link
+              href={`/vote/${roomCode}`}
+              className="block w-full py-4 rounded-2xl text-lg font-bold text-center"
+              style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+            >
+              📱 투표 화면 미리보기
+            </Link>
+          </div>
         </div>
-      </main>
+      </Shell>
     )
   }
 
-  return null
-}
-
-function ManualBallotEditor({
-  topic,
-  initialError,
-  onSubmit,
-  onCancel,
-}: {
-  topic: string
-  initialError: string | null
-  onSubmit: (b: Ballot) => void
-  onCancel: () => void
-}) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [options, setOptions] = useState<BallotOption[]>([
-    { id: 'opt1', label: '', description: '' },
-    { id: 'opt2', label: '', description: '' },
-    { id: 'opt3', label: '', description: '' },
-  ])
-  const [totalDots, setTotalDots] = useState(5)
-
-  function updateOption(idx: number, patch: Partial<BallotOption>) {
-    setOptions((prev) => prev.map((o, i) => (i === idx ? { ...o, ...patch } : o)))
-  }
-
-  function addOption() {
-    if (options.length >= 9) return
-    setOptions((prev) => [...prev, { id: `opt${prev.length + 1}`, label: '', description: '' }])
-  }
-
-  function removeOption(idx: number) {
-    if (options.length <= 2) return
-    setOptions((prev) => prev.filter((_, i) => i !== idx))
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const valid = options.filter((o) => o.label.trim().length > 0)
-    if (!title.trim() || valid.length < 2) return
-    onSubmit({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      options: valid.map((o, i) => ({
-        id: `opt${i + 1}`,
-        label: o.label.trim(),
-        description: o.description?.trim() || undefined,
-      })),
-      total_dots: totalDots,
-    })
-  }
-
+  // ──── SETUP ────
   return (
-    <main className="min-h-screen p-6 max-w-3xl mx-auto pb-24">
-      <button onClick={onCancel} className="text-blue-700 text-elder-sm mb-4">
-        ← 돌아가기
-      </button>
-      <h1 className="text-elder-2xl font-bold mb-2">투표안 직접 입력</h1>
-      <p className="text-elder-sm text-gray-600 mb-2">주제: {topic}</p>
-
-      {initialError && (
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-6">
-          <p className="text-orange-800">⚠ AI 생성 실패: {initialError}</p>
-          <p className="text-elder-sm text-orange-700 mt-1">직접 작성해주세요.</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-elder-base font-bold mb-2">투표 질문</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="input-large"
-            placeholder="예: 마을 진입로에서 가장 시급한 정비는?"
-            required
-          />
+    <Shell>
+      <div className="p-5 pb-8">
+        <div className="flex items-center gap-2 mb-5">
+          <button
+            onClick={() => router.push('/')}
+            className="text-2xl px-2 py-1"
+            style={{ color: '#E59866' }}
+            aria-label="처음으로"
+          >
+            ←
+          </button>
+          <h2 className="text-xl font-black text-amber-100">📋 세션 설정</h2>
         </div>
 
-        <div>
-          <label className="block text-elder-base font-bold mb-2">
-            보충 설명 <span className="text-elder-sm font-normal text-gray-500">(선택)</span>
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="input-large"
-            rows={2}
-          />
+        {/* 주제 */}
+        <Label icon="📌">투표 주제</Label>
+        <input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="예: 마을 행사 장소 선정"
+          maxLength={200}
+          className="w-full px-4 py-3 rounded-xl mb-5 outline-none text-base"
+          style={inputStyle()}
+        />
+
+        {/* 도트 개수 */}
+        <Label icon="🔴">1인당 스티커 개수</Label>
+        <div className="flex items-center gap-4 mb-5">
+          <RoundBtn onClick={() => setDots((d) => Math.max(1, d - 1))} aria-label="줄이기">
+            −
+          </RoundBtn>
+          <span
+            className="text-4xl font-black text-amber-100"
+            style={{ minWidth: 56, textAlign: 'center' }}
+          >
+            {dots}
+          </span>
+          <RoundBtn onClick={() => setDots((d) => Math.min(10, d + 1))} aria-label="늘리기">
+            +
+          </RoundBtn>
+          <span className="text-base" style={{ color: '#8D7B68' }}>
+            개
+          </span>
         </div>
 
-        <div>
-          <label className="block text-elder-base font-bold mb-2">선택지 (2–9개)</label>
-          <div className="space-y-3">
-            {options.map((opt, idx) => (
-              <div key={idx} className="border-2 border-gray-200 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-blue-900 text-white rounded-full w-7 h-7 flex items-center justify-center text-elder-sm font-bold">
-                    {idx + 1}
-                  </span>
+        {/* 항목 + AI 도우미 */}
+        <div className="flex items-center justify-between mb-2">
+          <Label icon="📝">투표 항목</Label>
+          <button
+            onClick={fillWithAi}
+            disabled={aiLoading}
+            className="text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+            style={{ backgroundColor: '#A04000', color: 'white' }}
+          >
+            {aiLoading ? '✨ 생성 중…' : '✨ AI로 채우기'}
+          </button>
+        </div>
+        {aiError && (
+          <p className="text-xs mb-2" style={{ color: '#E74C3C' }}>
+            {aiError}
+          </p>
+        )}
+
+        <div className="space-y-2 mb-4">
+          {items.map((it, i) => {
+            const c = colorFor(i)
+            return (
+              <div key={i} className="space-y-1.5">
+                <div className="flex gap-2 items-center">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 text-white"
+                    style={{ backgroundColor: c.light }}
+                  >
+                    {i + 1}
+                  </div>
                   <input
-                    type="text"
-                    value={opt.label}
-                    onChange={(e) => updateOption(idx, { label: e.target.value })}
-                    placeholder="선택지 이름"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-elder-base"
+                    value={it.label}
+                    onChange={(e) => patchItem(i, { label: e.target.value })}
+                    placeholder={`항목 ${i + 1}`}
+                    className="flex-1 px-3 py-2 rounded-lg text-base outline-none min-w-0"
+                    style={inputStyle()}
                   />
-                  {options.length > 2 && (
+                  {items.length > 2 && (
                     <button
-                      type="button"
-                      onClick={() => removeOption(idx)}
-                      className="text-red-600 px-2 py-1"
+                      onClick={() => removeItem(i)}
+                      className="text-xl px-2"
+                      style={{ color: '#6B4C40' }}
+                      aria-label={`항목 ${i + 1} 삭제`}
                     >
-                      삭제
+                      ×
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  value={opt.description ?? ''}
-                  onChange={(e) => updateOption(idx, { description: e.target.value })}
-                  placeholder="한 줄 설명 (선택)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-elder-sm"
-                />
+                <div className="pl-11 pr-8">
+                  <input
+                    value={it.description}
+                    onChange={(e) => patchItem(i, { description: e.target.value })}
+                    placeholder="한 줄 설명 (선택)"
+                    className="w-full px-3 py-1.5 rounded-lg text-xs outline-none"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,.04)',
+                      border: '1px solid rgba(255,255,255,.08)',
+                      color: 'rgba(255,255,255,.7)',
+                    }}
+                  />
+                </div>
               </div>
-            ))}
-          </div>
-          {options.length < 9 && (
-            <button
-              type="button"
-              onClick={addOption}
-              className="mt-3 text-blue-700 font-bold text-elder-sm"
-            >
-              + 선택지 추가
-            </button>
-          )}
+            )
+          })}
         </div>
 
-        <div>
-          <label className="block text-elder-base font-bold mb-2">1인당 도트 수</label>
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={totalDots}
-            onChange={(e) => setTotalDots(Number(e.target.value) || 5)}
-            className="input-large w-32"
-          />
-        </div>
+        {items.length < 9 && (
+          <button
+            onClick={addItem}
+            className="w-full py-3 rounded-xl text-sm mb-5"
+            style={{
+              backgroundColor: 'rgba(255,255,255,.04)',
+              border: '2px dashed rgba(255,255,255,.1)',
+              color: '#E59866',
+            }}
+          >
+            + 항목 추가
+          </button>
+        )}
 
-        <button type="submit" className="btn-primary w-full">
-          확인 →
+        {createError && (
+          <p className="text-sm mb-3 text-center" style={{ color: '#E74C3C' }}>
+            {createError}
+          </p>
+        )}
+
+        <button
+          onClick={startSession}
+          className="w-full py-5 rounded-2xl text-white text-xl font-black"
+          style={{ backgroundColor: '#D35400', boxShadow: '0 8px 24px rgba(211,84,0,.4)' }}
+        >
+          🚀 투표 시작하기
         </button>
-      </form>
+      </div>
+    </Shell>
+  )
+}
+
+// ──── 공통 ────
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <main
+      className="min-h-screen flex flex-col text-amber-50 mx-auto"
+      style={{
+        backgroundColor: '#1E1A14',
+        maxWidth: 480,
+        fontFamily: '"Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif',
+      }}
+    >
+      {children}
     </main>
   )
+}
+
+function Label({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    <p className="text-sm font-bold mb-2" style={{ color: '#8D7B68' }}>
+      {icon} {children}
+    </p>
+  )
+}
+
+function RoundBtn({
+  children,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...props}
+      className="w-12 h-12 rounded-full text-2xl text-white"
+      style={{ backgroundColor: 'rgba(255,255,255,.08)' }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function inputStyle(): React.CSSProperties {
+  return {
+    backgroundColor: 'rgba(255,255,255,.08)',
+    border: '1.5px solid rgba(255,255,255,.15)',
+    color: 'white',
+  }
 }

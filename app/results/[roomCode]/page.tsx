@@ -138,19 +138,27 @@ export default function ResultsPage() {
 
   if (load.status === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-elder-lg">불러오는 중…</p>
-      </main>
+      <DarkMain>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-base text-amber-100">불러오는 중…</p>
+        </div>
+      </DarkMain>
     )
   }
   if (load.status === 'error') {
     return (
-      <main className="min-h-screen p-6 max-w-md mx-auto pt-20 text-center">
-        <p className="text-elder-xl font-bold mb-3">{load.message}</p>
-        <Link href="/" className="btn-secondary inline-block mt-6">
-          처음으로
-        </Link>
-      </main>
+      <DarkMain>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6">
+          <p className="text-xl font-bold text-amber-100">{load.message}</p>
+          <Link
+            href="/"
+            className="inline-block px-6 py-3 rounded-2xl font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#E59866' }}
+          >
+            처음으로
+          </Link>
+        </div>
+      </DarkMain>
     )
   }
 
@@ -217,281 +225,420 @@ export default function ResultsPage() {
 
   if (minutesMode) {
     return (
-      <main className="min-h-screen p-6 max-w-3xl mx-auto pb-32">
-        <h1 className="text-elder-2xl font-bold mb-2">📝 회의록 PDF 만들기</h1>
-        <p className="text-elder-sm text-gray-600 mb-6">
-          주제 · 날짜 · 투표 결과는 자동으로 채워집니다. 토론 내용과 다음 단계만 입력하세요.
-          비워두면 "(기록 없음)" 으로 표시됩니다.
-        </p>
+      <DarkMain>
+        <div className="p-4 pb-28">
+          <h1 className="text-xl font-black text-amber-100 mb-2">📝 회의록 PDF 만들기</h1>
+          <p className="text-xs mb-5" style={{ color: '#8D7B68' }}>
+            주제 · 날짜 · 투표 결과는 자동으로 채워집니다. 비워두면 "(기록 없음)" 표시.
+          </p>
 
-        <div className="space-y-5">
-          <div>
-            <label className="block text-elder-base font-bold mb-2">
-              참여자 수{' '}
-              <span className="text-elder-sm font-normal text-gray-500">(선택)</span>
-            </label>
-            <input
-              type="text"
-              value={minutesAttendees}
-              onChange={(e) => setMinutesAttendees(e.target.value)}
-              placeholder="예: 12명 (어르신 8 + 진행자 2 + 청년 2)"
-              className="input-large"
-              maxLength={80}
-            />
-          </div>
+          <div className="space-y-4">
+            <DarkField label="참여자 수 (선택)">
+              <input
+                type="text"
+                value={minutesAttendees}
+                onChange={(e) => setMinutesAttendees(e.target.value)}
+                placeholder="예: 12명 (어르신 8 + 진행자 2 + 청년 2)"
+                maxLength={80}
+                className="w-full px-3 py-2.5 rounded-lg outline-none text-base"
+                style={darkInputStyle()}
+              />
+            </DarkField>
 
-          <div>
-            <label className="block text-elder-base font-bold mb-2">
-              토론 내용{' '}
-              <span className="text-elder-sm font-normal text-gray-500">
-                (자유 메모, 회의 중 정리)
-              </span>
-            </label>
-            <textarea
-              value={minutesNotes}
-              onChange={(e) => setMinutesNotes(e.target.value)}
-              placeholder="예: 1순위 항목에 대해 이장님께서 예산 확보 가능성을 언급. 2순위는 마을 청년회가 자원봉사로 진행 가능하다는 의견."
-              className="input-large resize-y"
-              rows={6}
-              maxLength={3000}
-            />
-          </div>
+            <DarkField label="토론 내용 (자유 메모)">
+              <textarea
+                value={minutesNotes}
+                onChange={(e) => setMinutesNotes(e.target.value)}
+                placeholder="예: 1순위 항목에 대해 이장님께서 예산 확보 가능성을 언급. 2순위는 마을 청년회가 자원봉사로 진행 가능하다는 의견."
+                rows={6}
+                maxLength={3000}
+                className="w-full px-3 py-2.5 rounded-lg outline-none text-sm resize-y"
+                style={darkInputStyle()}
+              />
+            </DarkField>
 
-          <div>
-            <label className="block text-elder-base font-bold mb-2">
-              다음 단계 / 합의 사항
-            </label>
-            <textarea
-              value={minutesNextSteps}
-              onChange={(e) => setMinutesNextSteps(e.target.value)}
-              placeholder={
-                '예:\n· 다음 회의 일정: 2026년 5월 10일 (화) 오후 2시\n· 1순위 안건은 군청 담당자에게 5월 5일까지 제출\n· 이장: 마을 방송으로 결과 공유'
-              }
-              className="input-large resize-y"
-              rows={5}
-              maxLength={2000}
-            />
+            <DarkField label="다음 단계 / 합의 사항">
+              <textarea
+                value={minutesNextSteps}
+                onChange={(e) => setMinutesNextSteps(e.target.value)}
+                placeholder={
+                  '예:\n· 다음 회의: 2026년 5월 10일 (화) 오후 2시\n· 1순위 안건은 군청에 5월 5일까지 제출'
+                }
+                rows={5}
+                maxLength={2000}
+                className="w-full px-3 py-2.5 rounded-lg outline-none text-sm resize-y"
+                style={darkInputStyle()}
+              />
+            </DarkField>
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4">
-          <div className="max-w-3xl mx-auto flex gap-3">
-            <button
-              onClick={() => setMinutesMode(false)}
-              className="btn-secondary flex-1"
-              disabled={downloadingMinutes}
-            >
-              뒤로
-            </button>
-            <button
-              onClick={downloadMinutes}
-              className="btn-primary flex-1"
-              disabled={downloadingMinutes}
-            >
-              {downloadingMinutes ? '생성 중…' : '📄 PDF 다운로드'}
-            </button>
-          </div>
-        </div>
-      </main>
+        <DarkBottomBar>
+          <button
+            onClick={() => setMinutesMode(false)}
+            disabled={downloadingMinutes}
+            className="flex-1 py-3 rounded-xl font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+          >
+            뒤로
+          </button>
+          <button
+            onClick={downloadMinutes}
+            disabled={downloadingMinutes}
+            className="flex-1 py-3 rounded-xl text-white font-bold"
+            style={{ backgroundColor: '#D35400' }}
+          >
+            {downloadingMinutes ? '생성 중…' : '📄 PDF 다운로드'}
+          </button>
+        </DarkBottomBar>
+      </DarkMain>
     )
   }
 
   if (analogMode) {
     return (
-      <main className="min-h-screen p-6 max-w-3xl mx-auto pb-32">
-        <h1 className="text-elder-2xl font-bold mb-2">📋 종이 시트 카운트 입력</h1>
-        <p className="text-elder-sm text-gray-600 mb-6">
-          종이에 붙어있는 스티커 수를 옵션별로 입력하세요. 저장하면 디지털 투표와 합산됩니다.
-        </p>
+      <DarkMain>
+        <div className="p-4 pb-28">
+          <h1 className="text-xl font-black text-amber-100 mb-2">📋 종이 시트 카운트</h1>
+          <p className="text-xs mb-5" style={{ color: '#8D7B68' }}>
+            종이에 붙은 스티커 수를 옵션별로 입력하세요. 저장하면 디지털 투표와 합산됩니다.
+          </p>
 
-        <div className="space-y-3">
-          {options.map((opt) => (
-            <div key={opt.id} className="border-2 border-gray-200 rounded-xl p-4">
-              <h3 className="text-elder-base font-bold mb-2">{opt.label}</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() =>
-                    setAnalogDraft((prev) => ({
-                      ...prev,
-                      [opt.id]: Math.max(0, (prev[opt.id] ?? 0) - 1),
-                    }))
-                  }
-                  className="w-14 h-14 rounded-full bg-gray-200 text-elder-2xl font-bold"
+          <div className="space-y-2.5">
+            {options.map((opt, i) => {
+              const c = colorFor(i)
+              return (
+                <div
+                  key={opt.id}
+                  className="rounded-2xl p-3"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,.04)',
+                    border: '1.5px solid rgba(255,255,255,.06)',
+                  }}
                 >
-                  −
-                </button>
-                <input
-                  type="number"
-                  min={0}
-                  value={analogDraft[opt.id] ?? 0}
-                  onChange={(e) =>
-                    setAnalogDraft((prev) => ({
-                      ...prev,
-                      [opt.id]: Math.max(0, Number(e.target.value) || 0),
-                    }))
-                  }
-                  className="flex-1 text-center text-elder-2xl font-bold border-2 border-gray-300 rounded-xl py-2"
-                />
-                <button
-                  onClick={() =>
-                    setAnalogDraft((prev) => ({
-                      ...prev,
-                      [opt.id]: (prev[opt.id] ?? 0) + 1,
-                    }))
-                  }
-                  className="w-14 h-14 rounded-full bg-blue-900 text-white text-elder-2xl font-bold"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4">
-          <div className="max-w-3xl mx-auto flex gap-3">
-            <button
-              onClick={() => setAnalogMode(false)}
-              className="btn-secondary flex-1"
-              disabled={savingAnalog}
-            >
-              취소
-            </button>
-            <button
-              onClick={saveAnalog}
-              className="btn-primary flex-1"
-              disabled={savingAnalog}
-            >
-              {savingAnalog ? '저장 중…' : '저장하고 합산'}
-            </button>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 text-white"
+                      style={{ backgroundColor: c.light }}
+                    >
+                      {i + 1}
+                    </div>
+                    <h3 className="text-base font-bold text-amber-50">{opt.label}</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setAnalogDraft((prev) => ({
+                          ...prev,
+                          [opt.id]: Math.max(0, (prev[opt.id] ?? 0) - 1),
+                        }))
+                      }
+                      className="w-12 h-12 rounded-full text-2xl text-white font-black"
+                      style={{ backgroundColor: 'rgba(255,255,255,.08)' }}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={analogDraft[opt.id] ?? 0}
+                      onChange={(e) =>
+                        setAnalogDraft((prev) => ({
+                          ...prev,
+                          [opt.id]: Math.max(0, Number(e.target.value) || 0),
+                        }))
+                      }
+                      className="flex-1 text-center text-2xl font-black rounded-xl py-2 outline-none"
+                      style={darkInputStyle()}
+                    />
+                    <button
+                      onClick={() =>
+                        setAnalogDraft((prev) => ({
+                          ...prev,
+                          [opt.id]: (prev[opt.id] ?? 0) + 1,
+                        }))
+                      }
+                      className="w-12 h-12 rounded-full text-2xl text-white font-black"
+                      style={{ backgroundColor: c.light }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-      </main>
+
+        <DarkBottomBar>
+          <button
+            onClick={() => setAnalogMode(false)}
+            disabled={savingAnalog}
+            className="flex-1 py-3 rounded-xl font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+          >
+            취소
+          </button>
+          <button
+            onClick={saveAnalog}
+            disabled={savingAnalog}
+            className="flex-1 py-3 rounded-xl text-white font-bold"
+            style={{ backgroundColor: '#D35400' }}
+          >
+            {savingAnalog ? '저장 중…' : '저장하고 합산'}
+          </button>
+        </DarkBottomBar>
+      </DarkMain>
     )
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-5xl mx-auto">
-      {/* 헤더 */}
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <p className="text-elder-sm text-gray-500">참여 코드 {room.room_code} · {room.topic}</p>
-          <h1 className="text-elder-3xl font-bold text-blue-900">{ballot.title}</h1>
+    <main
+      className="min-h-screen mx-auto"
+      style={{
+        backgroundColor: '#1E1A14',
+        color: '#F0EBE3',
+        maxWidth: 480,
+        fontFamily: '"Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif',
+      }}
+    >
+      <div className="p-4">
+        {/* 헤더 */}
+        <div className="flex items-start justify-between mb-4 gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div
+                className="w-2 h-2 rounded-full anim-glow"
+                style={{ backgroundColor: room.is_closed ? '#7B241C' : '#2ECC71' }}
+              />
+              <span
+                className="text-xs font-bold"
+                style={{ color: room.is_closed ? '#7B241C' : '#2ECC71' }}
+              >
+                {room.is_closed ? '마감됨' : '총 집계 중'}
+              </span>
+              <span className="text-xs ml-2" style={{ color: '#5D5248' }}>
+                {room.room_code}
+              </span>
+            </div>
+            <h2 className="text-lg font-black text-amber-100 truncate">{ballot.title}</h2>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <CounterBox label="참여" value={Math.max(sumDigital, sumAnalog)} color="#74b9ff" hint />
+            <CounterBox label="스티커" value={sumDigital + sumAnalog} color="#fd79a8" />
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setAnalogMode(true)} className="btn-secondary">
-            📋 종이 카운트 입력
-          </button>
-          <button onClick={() => setMinutesMode(true)} className="btn-secondary">
-            📝 회의록 PDF
-          </button>
-          {!room.is_closed && (
-            <button onClick={closeVoting} disabled={closing} className="btn-danger">
-              {closing ? '마감 중…' : '🛑 투표 마감'}
-            </button>
+
+        {/* 채널 합계 */}
+        <div className="flex gap-2 mb-4 text-xs">
+          <span className="px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(116,185,255,.15)', color: '#74b9ff' }}>
+            📱 폰 {sumDigital}
+          </span>
+          <span className="px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(230,126,34,.15)', color: '#E67E22' }}>
+            📋 종이 {sumAnalog}
+          </span>
+        </div>
+
+        {/* 항목별 결과 */}
+        <div className="space-y-2.5 mb-4">
+          {results.length === 0 ? (
+            <p className="text-base text-center py-12" style={{ color: '#5D5248' }}>
+              아직 투표가 없습니다
+            </p>
+          ) : (
+            results.map((r, rank) => {
+              const originalIdx = options.findIndex((o) => o.id === r.option_id)
+              const c = colorFor(originalIdx >= 0 ? originalIdx : rank)
+              const pct = maxTotal > 0 ? (r.total / maxTotal) * 100 : 0
+              const isTop = rank === 0 && r.total > 0
+              return (
+                <div
+                  key={r.option_id}
+                  className="rounded-2xl p-3.5 transition-all"
+                  style={{
+                    backgroundColor: isTop ? `${c.bg}33` : 'rgba(255,255,255,.04)',
+                    border: `1.5px solid ${isTop ? `${c.light}55` : 'rgba(255,255,255,.06)'}`,
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {isTop && <span className="text-lg">👑</span>}
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 text-white"
+                        style={{ backgroundColor: c.light }}
+                      >
+                        {originalIdx + 1}
+                      </div>
+                      <span className="text-base font-bold text-amber-50 truncate">{r.label}</span>
+                    </div>
+                    <span className="text-2xl font-black flex-shrink-0" style={{ color: c.light }}>
+                      {r.total}
+                    </span>
+                  </div>
+
+                  <div
+                    className="h-2 rounded-full mb-2 overflow-hidden"
+                    style={{ backgroundColor: 'rgba(255,255,255,.07)' }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: c.light }}
+                    />
+                  </div>
+
+                  {/* 스티커 도트 그리드 (프로토타입 시그니처) */}
+                  {r.total > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {Array.from({ length: r.digital }).map((_, i) => (
+                        <div
+                          key={`d${i}`}
+                          className="w-3.5 h-3.5 rounded-full"
+                          style={{
+                            backgroundColor: '#E74C3C',
+                            boxShadow: '0 2px 5px rgba(192,57,43,.6)',
+                          }}
+                        />
+                      ))}
+                      {Array.from({ length: r.analog }).map((_, i) => (
+                        <div
+                          key={`a${i}`}
+                          className="w-3.5 h-3.5 rounded-full"
+                          style={{
+                            backgroundColor: '#E67E22',
+                            boxShadow: '0 2px 5px rgba(160,64,0,.6)',
+                          }}
+                          title="종이 스티커"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
           )}
         </div>
-      </div>
 
-      {/* 합계 */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <Stat label="📱 폰 투표" value={sumDigital} color="blue" />
-        <Stat label="📋 종이 투표" value={sumAnalog} color="orange" />
-        <Stat label="합계" value={sumDigital + sumAnalog} color="black" />
-      </div>
-
-      {/* 막대그래프 */}
-      <div className="space-y-4">
-        {results.length === 0 ? (
-          <p className="text-elder-base text-gray-500 text-center py-12">
-            아직 투표가 없습니다
-          </p>
-        ) : (
-          results.map((r, rank) => {
-            const originalIdx = options.findIndex((o) => o.id === r.option_id)
-            const c = colorFor(originalIdx >= 0 ? originalIdx : rank)
-            const widthDigital = (r.digital / maxTotal) * 100
-            const widthAnalog = (r.analog / maxTotal) * 100
-            const isTop = rank === 0 && r.total > 0
-            return (
-              <div
-                key={r.option_id}
-                className="rounded-xl p-4 transition-all"
-                style={{
-                  backgroundColor: isTop ? `${c.bg}15` : 'white',
-                  border: `2px solid ${isTop ? `${c.light}66` : '#e5e7eb'}`,
-                }}
-              >
-                <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
-                  <h3 className="text-elder-lg font-bold flex items-center gap-2">
-                    {isTop && <span className="text-2xl">👑</span>}
-                    <span
-                      className="rounded-full w-8 h-8 inline-flex items-center justify-center text-white text-elder-sm font-bold"
-                      style={{ backgroundColor: c.light }}
-                    >
-                      {originalIdx + 1}
-                    </span>
-                    <span className="text-gray-400">{rank + 1}위</span>
-                    <span>{r.label}</span>
-                  </h3>
-                  <p className="text-elder-xl font-bold" style={{ color: c.bg }}>
-                    {r.total}
-                    <span className="text-elder-sm text-gray-500 font-normal"> 도트</span>
-                  </p>
-                </div>
-                <div className="bg-gray-100 rounded-lg h-12 overflow-hidden flex">
-                  <div
-                    className="h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
-                    style={{ width: `${widthDigital}%`, backgroundColor: c.bg }}
-                  >
-                    {r.digital > 0 && r.digital}
-                  </div>
-                  <div
-                    className="h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
-                    style={{ width: `${widthAnalog}%`, backgroundColor: c.light }}
-                  >
-                    {r.analog > 0 && r.analog}
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
-
-      {room.is_closed && (
-        <div className="mt-8 bg-gray-100 border-2 border-gray-300 rounded-xl p-4 text-center">
-          <p className="text-elder-base font-bold text-gray-700">
-            🛑 투표가 마감되었습니다
-          </p>
+        {/* 진행자 액션 */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <button
+            onClick={() => setAnalogMode(true)}
+            className="py-3 rounded-xl text-sm font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,.07)', color: '#E59866' }}
+          >
+            📋 종이 카운트
+          </button>
+          <button
+            onClick={() => setMinutesMode(true)}
+            className="py-3 rounded-xl text-sm font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,.07)', color: '#E59866' }}
+          >
+            📝 회의록 PDF
+          </button>
         </div>
-      )}
 
-      <p className="text-xs text-gray-400 text-right mt-6">
-        실시간 동기화 · 재연결 {reconnects}회
-      </p>
+        {!room.is_closed && (
+          <button
+            onClick={closeVoting}
+            disabled={closing}
+            className="w-full py-3 rounded-xl text-sm font-bold text-white"
+            style={{ backgroundColor: '#7B241C' }}
+          >
+            {closing ? '마감 중…' : '🛑 투표 마감'}
+          </button>
+        )}
+
+        {room.is_closed && (
+          <div
+            className="rounded-xl p-3 text-center"
+            style={{ backgroundColor: 'rgba(123,36,28,.2)', border: '1px solid rgba(123,36,28,.4)' }}
+          >
+            <p className="text-base font-bold" style={{ color: '#E74C3C' }}>
+              🛑 투표가 마감되었습니다
+            </p>
+          </div>
+        )}
+
+        <p className="text-xs text-right mt-4" style={{ color: '#5D5248' }}>
+          실시간 동기화 · 재연결 {reconnects}회
+        </p>
+      </div>
     </main>
   )
 }
 
-function Stat({
+function CounterBox({
   label,
   value,
   color,
+  hint,
 }: {
   label: string
   value: number
-  color: 'blue' | 'orange' | 'black'
+  color: string
+  hint?: boolean
 }) {
-  const colorMap = {
-    blue: 'text-blue-700',
-    orange: 'text-orange-600',
-    black: 'text-gray-900',
-  }
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center">
-      <p className="text-elder-sm text-gray-600 mb-1">{label}</p>
-      <p className={`text-elder-3xl font-bold ${colorMap[color]}`}>{value}</p>
+    <div
+      className="text-center rounded-xl px-3 py-2"
+      style={{ backgroundColor: 'rgba(255,255,255,.06)' }}
+      title={hint ? '대략값 (max(폰, 종이))' : undefined}
+    >
+      <div className="text-xl font-black" style={{ color }}>
+        {value}
+      </div>
+      <div className="text-xs" style={{ color: '#6B5B48' }}>
+        {label}
+      </div>
     </div>
   )
+}
+
+function DarkMain({ children }: { children: React.ReactNode }) {
+  return (
+    <main
+      className="min-h-screen flex flex-col mx-auto"
+      style={{
+        backgroundColor: '#1E1A14',
+        color: '#F0EBE3',
+        maxWidth: 480,
+        fontFamily: '"Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif',
+      }}
+    >
+      {children}
+    </main>
+  )
+}
+
+function DarkField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-bold mb-2" style={{ color: '#A0896E' }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function DarkBottomBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="fixed bottom-0 inset-x-0 mx-auto p-3 flex gap-2"
+      style={{
+        backgroundColor: '#1E1A14',
+        borderTop: '1px solid rgba(255,255,255,.08)',
+        maxWidth: 480,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function darkInputStyle(): React.CSSProperties {
+  return {
+    backgroundColor: 'rgba(255,255,255,.08)',
+    border: '1.5px solid rgba(255,255,255,.15)',
+    color: 'white',
+  }
 }
