@@ -307,6 +307,16 @@ export default function VotePage() {
     }))
   }
 
+  function restartVoting() {
+    if (order.length === 0) return
+    if (!confirm('지금까지 붙인 스티커를 모두 빼고 처음부터 다시 시작할까요?')) return
+    setMyDots(Object.fromEntries(options.map((o) => [o.id, [] as PlacedDot[]])))
+    setOrder([])
+    setIdx(0)
+    setDirection('L')
+    speak('처음부터 다시 시작하세요')
+  }
+
   async function submit(finalOrder: Placement[]) {
     setPhase('submitting')
     // optionId별 도트 수 집계
@@ -469,55 +479,84 @@ export default function VotePage() {
   }
 
   // ──── VOTING ────
+  const voteFinished = remaining === 0
   return (
     <DarkShell>
-      <header className="flex items-center justify-between px-3 pt-3 pb-2">
-        <span className="text-amber-200/40 text-sm font-bold w-12">
-          {idx + 1}/{options.length}
-        </span>
-        <div className="text-center">
-          <div className="flex gap-1.5 justify-center mb-1">
-            {Array.from({ length: ballot.total_dots }).map((_, i) => {
-              const isAvail = i < remaining
-              return (
-                <div
-                  key={i}
-                  className="rounded-full transition-all self-center"
-                  style={{
-                    width: isAvail ? 22 : 12,
-                    height: isAvail ? 22 : 12,
-                    backgroundColor: isAvail ? '#ffffff' : 'rgba(255,255,255,.18)',
-                    border: isAvail ? '2.5px solid #000000' : 'none',
-                    boxShadow: isAvail ? '0 2px 6px rgba(0,0,0,.5)' : 'none',
-                  }}
-                />
-              )
-            })}
-          </div>
-          <p
-            className="text-sm font-bold"
-            style={{ color: remaining > 0 ? '#F0EBE3' : '#5D5248' }}
-          >
-            {remaining > 0 ? `남은 스티커 ${remaining}개` : '완료! ✅'}
-          </p>
-        </div>
-        <div className="w-12 flex justify-end">
+      {/* 상단 3-버튼: 이전 / 다시하기 / 다음 */}
+      <header className="flex gap-2 px-3 pt-3 pb-2">
+        <button
+          onClick={goPrev}
+          disabled={idx === 0 || voteFinished}
+          className="flex-1 py-3 rounded-xl font-bold text-base disabled:opacity-30"
+          style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+        >
+          ← 이전
+        </button>
+        <button
+          onClick={restartVoting}
+          disabled={order.length === 0 || voteFinished}
+          className="flex-1 py-3 rounded-xl font-bold text-base disabled:opacity-30"
+          style={{ backgroundColor: 'rgba(231,76,60,.18)', color: '#E74C3C' }}
+        >
+          ↺ 다시하기
+        </button>
+        <button
+          onClick={goNext}
+          disabled={idx === options.length - 1 || voteFinished}
+          className="flex-1 py-3 rounded-xl font-bold text-base disabled:opacity-30"
+          style={{ backgroundColor: 'rgba(255,255,255,.08)', color: '#F5CBA7' }}
+        >
+          다음 →
+        </button>
+      </header>
+
+      {/* 진행 표시 + 카운터 */}
+      <div className="px-3 pb-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-amber-200/40 text-xs font-bold">
+            {idx + 1} / {options.length}
+          </span>
           {isOffline && (
-            <span className="text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded-full font-bold">
-              오프
+            <span className="text-xs bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-bold">
+              ⚠ 오프라인
             </span>
           )}
         </div>
-      </header>
+        <div className="flex items-center justify-center gap-1.5">
+          {Array.from({ length: ballot.total_dots }).map((_, i) => {
+            const isAvail = i < remaining
+            return (
+              <div
+                key={i}
+                className="rounded-full transition-all"
+                style={{
+                  width: isAvail ? 18 : 10,
+                  height: isAvail ? 18 : 10,
+                  backgroundColor: isAvail ? '#ffffff' : 'rgba(255,255,255,.18)',
+                  border: isAvail ? '2px solid #000000' : 'none',
+                  boxShadow: isAvail ? '0 2px 4px rgba(0,0,0,.5)' : 'none',
+                }}
+              />
+            )
+          })}
+          <span
+            className="ml-2 text-sm font-bold"
+            style={{ color: remaining > 0 ? '#F0EBE3' : '#5D5248' }}
+          >
+            {remaining > 0 ? `${remaining}개 남음` : '완료! ✅'}
+          </span>
+        </div>
+      </div>
 
-      <div className="flex-1 flex p-3">
+      {/* 카드: 항목 라벨이 상단 가운데, 나머지는 도트 배치 영역 */}
+      <div className="flex-1 flex px-3 pb-3">
         <div
           ref={cardRef}
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          className={`touch-card flex-1 flex flex-col items-center justify-center rounded-3xl ${
+          className={`touch-card flex-1 flex flex-col items-center rounded-3xl pt-7 pb-6 ${
             direction === 'R' ? 'anim-slide-r' : 'anim-slide-l'
           }`}
           style={{
@@ -528,19 +567,31 @@ export default function VotePage() {
           }}
         >
           <div className="absolute -top-7 -right-7 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
+
+          {/* 항목 내용 — 상단 가운데 */}
           <div className="text-center px-6 pointer-events-none z-10 relative">
-            <div className="text-5xl font-black text-white mb-1">{idx + 1}</div>
+            <div className="text-4xl font-black text-white mb-1">{idx + 1}</div>
             <p
               className="font-black text-white leading-snug break-keep"
               style={{ fontSize: 'clamp(22px, 7vw, 33px)', textShadow: '0 2px 8px rgba(0,0,0,.4)' }}
             >
               {item.label}
             </p>
+            {item.description && (
+              <p
+                className="text-white/80 text-sm mt-2"
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,.3)' }}
+              >
+                {item.description}
+              </p>
+            )}
           </div>
 
           {placed.length === 0 && remaining > 0 && (
-            <div className="absolute bottom-4 inset-x-0 text-center pointer-events-none z-10">
-              <p className="text-white/75 text-lg font-bold anim-bounce">👆 터치 / ← → 밀기</p>
+            <div className="absolute bottom-5 inset-x-0 text-center pointer-events-none z-10">
+              <p className="text-white/75 text-lg font-bold anim-bounce">
+                👆 빈 곳을 터치 / ← → 밀기
+              </p>
             </div>
           )}
 
@@ -589,36 +640,9 @@ export default function VotePage() {
         </div>
       </div>
 
-      <div className="px-3 pb-3 flex gap-2">
-        {idx > 0 && (
-          <button
-            onClick={goPrev}
-            className="dark-secondary flex-1"
-            disabled={remaining === 0}
-          >
-            ← 이전
-          </button>
-        )}
-        {idx < options.length - 1 && (
-          <button
-            onClick={goNext}
-            className="dark-secondary flex-1"
-            disabled={remaining === 0}
-          >
-            다음 →
-          </button>
-        )}
-        {order.length > 0 && remaining > 0 && (
-          <button onClick={undoLast} className="dark-secondary flex-1">
-            ↶ 마지막 빼기
-          </button>
-        )}
-        {remaining === 0 && phase === 'voting' && (
-          <div className="flex-1 py-3 text-center text-amber-200/60 text-base">
-            제출 중… ✅
-          </div>
-        )}
-      </div>
+      {voteFinished && (
+        <div className="px-3 pb-3 text-center text-amber-200/60 text-base">제출 중… ✅</div>
+      )}
     </DarkShell>
   )
 }
