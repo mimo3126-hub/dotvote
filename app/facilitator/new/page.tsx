@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { QRCodeCanvas } from 'qrcode.react'
 import Link from 'next/link'
@@ -20,16 +20,48 @@ const INITIAL_ITEMS: ItemDraft[] = [
   { label: '', description: '' },
 ]
 
+/** 사진을 1200px 너비 이내로 축소 + JPEG 0.85 압축 → base64 반환 */
+async function compressImage(file: File): Promise<{ base64: string; mediaType: string }> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('파일 읽기 실패'))
+    reader.readAsDataURL(file)
+  })
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = () => reject(new Error('이미지 디코딩 실패'))
+    i.src = dataUrl
+  })
+  const maxDim = 1200
+  const ratio = Math.min(1, maxDim / Math.max(img.width, img.height))
+  const w = Math.round(img.width * ratio)
+  const h = Math.round(img.height * ratio)
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas 미지원')
+  ctx.drawImage(img, 0, 0, w, h)
+  const compressed = canvas.toDataURL('image/jpeg', 0.85)
+  return {
+    base64: compressed.split(',')[1] ?? '',
+    mediaType: 'image/jpeg',
+  }
+}
+
 export default function FacilitatorNewPage() {
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>('setup')
   const [topic, setTopic] = useState('')
   const [items, setItems] = useState<ItemDraft[]>(INITIAL_ITEMS)
   const [dots, setDots] = useState(5)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState('')
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoError, setPhotoError] = useState('')
   const [createError, setCreateError] = useState('')
   const [roomCode, setRoomCode] = useState('')
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   function patchItem(i: number, patch: Partial<ItemDraft>) {
     setItems((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
@@ -45,36 +77,38 @@ export default function FacilitatorNewPage() {
     setItems((prev) => prev.filter((_, j) => j !== i))
   }
 
-  async function fillWithAi() {
-    if (topic.trim().length < 3) {
-      setAiError('주제를 먼저 입력하세요')
-      return
-    }
-    setAiLoading(true)
-    setAiError('')
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // 같은 파일 재선택 가능하게
+    if (!file) return
+    setPhotoError('')
+    setPhotoLoading(true)
     try {
-      const res = await fetch('/api/generate', {
+      const { base64, mediaType } = await compressImage(file)
+      const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ image: base64, mediaType }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setAiError(data.error ?? 'AI 생성 실패 — 직접 입력하세요')
+        setPhotoError(data.error ?? '추출 실패 — 직접 입력하세요')
         return
       }
-      const ballot: Ballot = data.ballot
+      const extracted: { title?: string; items: { label: string; description?: string }[] } = data
+      if (extracted.title && !topic.trim()) {
+        setTopic(extracted.title)
+      }
       setItems(
-        ballot.options.map((o) => ({
-          label: o.label,
-          description: o.description ?? '',
+        extracted.items.map((it) => ({
+          label: it.label,
+          description: it.description ?? '',
         })),
       )
-      setDots(ballot.total_dots)
-    } catch (e) {
-      setAiError(e instanceof Error ? e.message : 'AI 호출 실패')
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : '추출 실패')
     } finally {
-      setAiLoading(false)
+      setPhotoLoading(false)
     }
   }
 
@@ -252,23 +286,34 @@ export default function FacilitatorNewPage() {
           </span>
         </div>
 
-        {/* 항목 + AI 도우미 */}
+        {/* 항목 + 사진 OCR 도우미 */}
         <div className="flex items-center justify-between mb-2">
           <Label icon="📝">투표 항목</Label>
           <button
-            onClick={fillWithAi}
-            disabled={aiLoading}
+            onClick={() => fileRef.current?.click()}
+            disabled={photoLoading}
             className="text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
             style={{ backgroundColor: '#A04000', color: 'white' }}
           >
-            {aiLoading ? '✨ 생성 중…' : '✨ AI로 채우기'}
+            {photoLoading ? '📷 분석 중…' : '📷 사진으로 채우기'}
           </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhoto}
+            className="hidden"
+          />
         </div>
-        {aiError && (
+        {photoError && (
           <p className="text-xs mb-2" style={{ color: '#E74C3C' }}>
-            {aiError}
+            {photoError}
           </p>
         )}
+        <p className="text-[11px] mb-2" style={{ color: '#5D5248' }}>
+          화이트보드/종이/화면을 찍으면 자동으로 항목이 채워집니다
+        </p>
 
         <div className="space-y-2 mb-4">
           {items.map((it, i) => {

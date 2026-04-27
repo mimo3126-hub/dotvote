@@ -62,6 +62,8 @@ export default function VotePage() {
   const [isOffline, setIsOffline] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const cardRef = useRef<HTMLDivElement | null>(null)
+  const touchStart = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const ttsSeen = useRef<Set<string>>(new Set())
 
   // 룸 + 투표안 로드
   useEffect(() => {
@@ -110,6 +112,21 @@ export default function VotePage() {
   useEffect(() => {
     if (ballot && idx === (ballot.options as BallotOption[]).length - 1) setSeenAll(true)
   }, [idx, ballot])
+
+  // 단계 진입 시 TTS 음성 안내 (단계당 1회)
+  useEffect(() => {
+    if (!ballot) return
+    if (phase === 'confirm' && !ttsSeen.current.has('confirm')) {
+      ttsSeen.current.add('confirm')
+      speak(
+        `투표 안내입니다. 총 ${ballot.total_dots}개의 흰색 스티커를 사용할 수 있어요. 가장 중요한 항목에 여러 개를 붙이면 그만큼 가중치가 커집니다.`,
+      )
+    }
+    if (phase === 'voting' && !ttsSeen.current.has('voting')) {
+      ttsSeen.current.add('voting')
+      speak('투표를 시작하세요. 화면을 손가락으로 터치해서 스티커를 붙여주세요.')
+    }
+  }, [phase, ballot])
 
   // 오프라인 추적 + 재연결 시 큐 플러시
   useEffect(() => {
@@ -213,15 +230,13 @@ export default function VotePage() {
     setIdx((i) => Math.max(0, i - 1))
   }
 
-  function handleTap(e: React.MouseEvent | React.TouchEvent) {
-    if (phase !== 'voting' || remaining <= 0) return
-    e.preventDefault()
+  /** 카드에 도트 1개 배치 (좌표는 화면→카드 비율) */
+  function placeDot(clientX: number, clientY: number) {
+    if (remaining <= 0) return
     const rect = cardRef.current?.getBoundingClientRect()
     if (!rect) return
-    const cx = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const cy = 'touches' in e ? e.touches[0].clientY : e.clientY
-    const xP = Math.max(5, Math.min(95, ((cx - rect.left) / rect.width) * 100))
-    const yP = Math.max(5, Math.min(95, ((cy - rect.top) / rect.height) * 100))
+    const xP = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100))
+    const yP = Math.max(5, Math.min(95, ((clientY - rect.top) / rect.height) * 100))
     const dotId = Date.now() + Math.random()
 
     setMyDots((d) => ({ ...d, [item.id]: [...(d[item.id] ?? []), { x: xP, y: yP, id: dotId }] }))
@@ -233,14 +248,53 @@ export default function VotePage() {
 
     playPop()
 
-    if (remaining - 1 <= 0) {
-      // 마지막 도트 → TTS + 자동 제출
+    const left = remaining - 1
+    if (left <= 0) {
       setTimeout(
         () => speak('스티커를 모두 사용하셨습니다. 투표가 완료되었습니다. 감사합니다!'),
         200,
       )
       void submit([...order, { optionId: item.id, dotId }])
+    } else {
+      setTimeout(() => speak(`${left}개 남았습니다`), 150)
     }
+  }
+
+  // 스와이프 임계값 (px)
+  const SWIPE_THRESHOLD = 60
+  const MOVE_THRESHOLD = 12
+
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY, moved: false }
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current) return
+    const t = e.touches[0]
+    const dx = t.clientX - touchStart.current.x
+    const dy = t.clientY - touchStart.current.y
+    if (Math.hypot(dx, dy) > MOVE_THRESHOLD) touchStart.current.moved = true
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+      if (dx < 0) goNext()
+      else goPrev()
+      return
+    }
+    if (start.moved) return // 드래그였지만 임계값 미달 → 도트 배치 안 함
+    if (phase === 'voting') {
+      placeDot(start.x, start.y)
+    }
+  }
+  function onMouseDown(e: React.MouseEvent) {
+    // 데스크톱: 단순 클릭 = 도트 배치 (스와이프 X)
+    if (phase !== 'voting') return
+    placeDot(e.clientX, e.clientY)
   }
 
   function undoLast() {
@@ -304,6 +358,9 @@ export default function VotePage() {
         <div className="flex-1 flex p-4">
           <div
             key={idx}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
             className={`flex-1 flex items-center justify-center rounded-3xl p-8 relative overflow-hidden touch-card ${
               direction === 'R' ? 'anim-slide-r' : 'anim-slide-l'
             }`}
@@ -323,6 +380,7 @@ export default function VotePage() {
                   {item.description}
                 </p>
               )}
+              <p className="text-white/40 text-xs mt-6">← 좌우로 밀어서 다음 →</p>
             </div>
           </div>
         </div>
@@ -370,13 +428,17 @@ export default function VotePage() {
           </h2>
           <div className="bg-white/5 rounded-2xl px-6 py-5 max-w-xs">
             <p className="text-amber-200/80 text-lg leading-loose">
-              🔴 빨간 스티커{' '}
+              ⚪ 흰색 스티커{' '}
               <strong className="text-white text-2xl">{ballot.total_dots}</strong>
               개를
               <br />
               원하는 항목에
               <br />
               <strong className="text-amber-300">터치</strong>해서 붙여주세요!
+              <br />
+              <span className="text-amber-200/60 text-base">
+                (한 항목에 여러 개 = 가중치 ↑)
+              </span>
             </p>
           </div>
           <div className="flex gap-3 flex-wrap justify-center">
@@ -414,7 +476,7 @@ export default function VotePage() {
           {idx + 1}/{options.length}
         </span>
         <div className="text-center">
-          <div className="flex gap-1 justify-center mb-1">
+          <div className="flex gap-1.5 justify-center mb-1">
             {Array.from({ length: ballot.total_dots }).map((_, i) => {
               const isAvail = i < remaining
               return (
@@ -422,10 +484,11 @@ export default function VotePage() {
                   key={i}
                   className="rounded-full transition-all self-center"
                   style={{
-                    width: isAvail ? 20 : 11,
-                    height: isAvail ? 20 : 11,
-                    backgroundColor: isAvail ? '#E74C3C' : 'rgba(255,255,255,.12)',
-                    boxShadow: isAvail ? '0 2px 6px rgba(192,57,43,.6)' : 'none',
+                    width: isAvail ? 22 : 12,
+                    height: isAvail ? 22 : 12,
+                    backgroundColor: isAvail ? '#ffffff' : 'rgba(255,255,255,.18)',
+                    border: isAvail ? '2.5px solid #000000' : 'none',
+                    boxShadow: isAvail ? '0 2px 6px rgba(0,0,0,.5)' : 'none',
                   }}
                 />
               )
@@ -433,7 +496,7 @@ export default function VotePage() {
           </div>
           <p
             className="text-sm font-bold"
-            style={{ color: remaining > 0 ? '#E74C3C' : '#5D5248' }}
+            style={{ color: remaining > 0 ? '#F0EBE3' : '#5D5248' }}
           >
             {remaining > 0 ? `남은 스티커 ${remaining}개` : '완료! ✅'}
           </p>
@@ -450,8 +513,10 @@ export default function VotePage() {
       <div className="flex-1 flex p-3">
         <div
           ref={cardRef}
-          onMouseDown={handleTap}
-          onTouchStart={handleTap}
+          onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
           className={`touch-card flex-1 flex flex-col items-center justify-center rounded-3xl ${
             direction === 'R' ? 'anim-slide-r' : 'anim-slide-l'
           }`}
@@ -475,7 +540,7 @@ export default function VotePage() {
 
           {placed.length === 0 && remaining > 0 && (
             <div className="absolute bottom-4 inset-x-0 text-center pointer-events-none z-10">
-              <p className="text-white/75 text-lg font-bold anim-bounce">👆 여기를 터치!</p>
+              <p className="text-white/75 text-lg font-bold anim-bounce">👆 터치 / ← → 밀기</p>
             </div>
           )}
 
@@ -488,12 +553,16 @@ export default function VotePage() {
               <div
                 className="rounded-full anim-dot-pop"
                 style={{
-                  width: 46,
-                  height: 46,
-                  background: 'radial-gradient(circle at 32% 30%, #FF7675, #C0392B)',
+                  width: '40vw',
+                  height: '40vw',
+                  maxWidth: 200,
+                  maxHeight: 200,
+                  minWidth: 96,
+                  minHeight: 96,
+                  background: '#ffffff',
                   transform: 'translate(-50%, -50%)',
-                  boxShadow: '0 4px 14px rgba(192,57,43,.8)',
-                  border: '2.5px solid rgba(255,255,255,.4)',
+                  border: '6px solid #000000',
+                  boxShadow: '0 6px 18px rgba(0,0,0,.45)',
                 }}
               />
             </div>
@@ -507,9 +576,11 @@ export default function VotePage() {
               <div
                 className="rounded-full anim-ripple"
                 style={{
-                  width: 68,
-                  height: 68,
-                  border: '3px solid rgba(255,100,100,.6)',
+                  width: '50vw',
+                  height: '50vw',
+                  maxWidth: 240,
+                  maxHeight: 240,
+                  border: '4px solid rgba(0,0,0,.4)',
                   transform: 'translate(-50%, -50%)',
                 }}
               />
