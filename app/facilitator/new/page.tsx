@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { QRCodeCanvas } from 'qrcode.react'
 import Link from 'next/link'
 import { colorFor } from '@/lib/utils/option-colors'
-import type { Ballot } from '@/lib/types/ballot'
+import { parseOcrText } from '@/lib/ai/parse-ocr-text'
+import type { Ballot, ExtractedBallot } from '@/lib/types/ballot'
 
 type Phase = 'setup' | 'creating' | 'created'
 
@@ -59,6 +60,7 @@ export default function FacilitatorNewPage() {
   const [dots, setDots] = useState(5)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState('')
+  const [photoStage, setPhotoStage] = useState<{ stage: string; pct: number } | null>(null)
   const [createError, setCreateError] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const fileRef = useRef<HTMLInputElement | null>(null)
@@ -77,25 +79,70 @@ export default function FacilitatorNewPage() {
     setItems((prev) => prev.filter((_, j) => j !== i))
   }
 
-  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // 같은 파일 재선택 가능하게
-    if (!file) return
-    setPhotoError('')
-    setPhotoLoading(true)
+  /** Claude vision API 우선 시도 (키 있을 때 빠르고 정확). 실패하면 null 반환 */
+  async function tryClaudeExtract(file: File): Promise<ExtractedBallot | null> {
     try {
+      setPhotoStage({ stage: '서버 분석 시도 중', pct: 0 })
       const { base64, mediaType } = await compressImage(file)
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64, mediaType }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setPhotoError(data.error ?? '추출 실패 — 직접 입력하세요')
+      if (!res.ok) return null
+      const data = (await res.json()) as ExtractedBallot
+      if (!Array.isArray(data.items) || data.items.length < 2) return null
+      return data
+    } catch {
+      return null
+    }
+  }
+
+  /** 클라이언트 사이드 Tesseract.js OCR (API 키 불필요, 첫 사용 시 ~5MB 한글 데이터 다운로드) */
+  async function tryTesseractExtract(file: File): Promise<ExtractedBallot | null> {
+    const STAGE_KO: Record<string, string> = {
+      'loading tesseract core': '엔진 로드 중',
+      'loading tesseract core wasm': '엔진 로드 중',
+      'initializing tesseract': '엔진 초기화 중',
+      'loading language traineddata': '한글 데이터 다운로드 중',
+      'loading language traineddata (from cache)': '한글 데이터 로드 중',
+      'initializing api': 'OCR 준비 중',
+      'recognizing text': '글자 인식 중',
+    }
+    setPhotoStage({ stage: 'OCR 엔진 준비 중', pct: 0 })
+    const Tesseract = (await import('tesseract.js')).default
+    const result = await Tesseract.recognize(file, 'kor', {
+      logger: (m: { status: string; progress: number }) => {
+        const stage = STAGE_KO[m.status] ?? m.status
+        const pct = Math.round((m.progress ?? 0) * 100)
+        setPhotoStage({ stage, pct })
+      },
+    })
+    const parsed = parseOcrText(result.data.text)
+    if (parsed.items.length < 2) return null
+    return parsed
+  }
+
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // 같은 파일 재선택 가능하게
+    if (!file) return
+    setPhotoError('')
+    setPhotoLoading(true)
+    setPhotoStage(null)
+    try {
+      // 1단계: Claude vision (빠르고 정확, 키 있으면 ~3초)
+      let extracted = await tryClaudeExtract(file)
+
+      // 2단계: 실패 시 Tesseract 폴백 (키 불필요, 첫 사용 시 느림)
+      if (!extracted) {
+        extracted = await tryTesseractExtract(file)
+      }
+
+      if (!extracted || extracted.items.length < 2) {
+        setPhotoError('항목을 찾지 못했습니다 — 더 선명하게 찍거나 직접 입력하세요')
         return
       }
-      const extracted: { title?: string; items: { label: string; description?: string }[] } = data
       if (extracted.title && !topic.trim()) {
         setTopic(extracted.title)
       }
@@ -106,9 +153,10 @@ export default function FacilitatorNewPage() {
         })),
       )
     } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : '추출 실패')
+      setPhotoError(err instanceof Error ? err.message : '사진 분석 실패')
     } finally {
       setPhotoLoading(false)
+      setPhotoStage(null)
     }
   }
 
@@ -310,6 +358,19 @@ export default function FacilitatorNewPage() {
           <p className="text-xs mb-2" style={{ color: '#E74C3C' }}>
             {photoError}
           </p>
+        )}
+        {photoStage && (
+          <div className="mb-2">
+            <p className="text-[11px] mb-1" style={{ color: '#E59866' }}>
+              {photoStage.stage} {photoStage.pct > 0 ? `${photoStage.pct}%` : ''}
+            </p>
+            <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,.08)' }}>
+              <div
+                className="h-full transition-all"
+                style={{ width: `${photoStage.pct}%`, backgroundColor: '#E59866' }}
+              />
+            </div>
+          </div>
         )}
         <p className="text-[11px] mb-2" style={{ color: '#5D5248' }}>
           화이트보드/종이/화면을 찍으면 자동으로 항목이 채워집니다

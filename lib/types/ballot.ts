@@ -61,3 +61,9 @@ export interface AggregatedResult {
   analog: number
   total: number
 }
+
+/** 사진 OCR 추출 결과 (Claude vision / Tesseract 공통) */
+export interface ExtractedBallot {
+  title?: string
+  items: { label: string; description?: string }[]
+}
