@@ -565,41 +565,7 @@ function DarkShell({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <DarkStyles />
     </main>
-  )
-}
-
-function DarkStyles() {
-  return (
-    <style jsx global>{`
-      .dark-primary {
-        background: white;
-        color: #1a1a1a;
-        padding: 16px;
-        border-radius: 16px;
-        font-size: 19px;
-        font-weight: 700;
-      }
-      .dark-primary:disabled { opacity: 0.5; }
-      .dark-secondary {
-        background: rgba(255, 255, 255, 0.08);
-        color: white;
-        padding: 14px;
-        border-radius: 16px;
-        font-size: 17px;
-        font-weight: 700;
-      }
-      .dark-secondary:disabled { opacity: 0.4; }
-      .darken-btn {
-        background: rgba(255, 255, 255, 0.07);
-        color: #e59866;
-        padding: 13px 22px;
-        border-radius: 16px;
-        font-size: 17px;
-        font-weight: 700;
-      }
-    `}</style>
   )
 }
 
@@ -631,7 +597,6 @@ function FullScreen({ text, children }: { text?: string; children?: React.ReactN
     >
       {text && <p className="text-xl">{text}</p>}
       {children}
-      <DarkStyles />
     </main>
   )
 }

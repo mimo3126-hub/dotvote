@@ -57,6 +57,34 @@
 }
 .touch-card:active { transform: scale(.98); transition: transform .1s; }
 
+/* 다크 테마 공통 버튼 (vote / facilitator / results 공유) */
+.dark-primary {
+  background: white;
+  color: #1a1a1a;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 19px;
+  font-weight: 700;
+}
+.dark-primary:disabled { opacity: .5; }
+.dark-secondary {
+  background: rgba(255,255,255,.08);
+  color: white;
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.dark-secondary:disabled { opacity: .4; }
+.darken-btn {
+  background: rgba(255,255,255,.07);
+  color: #E59866;
+  padding: 13px 22px;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
 @layer base {
   :root {
     --color-primary: #1e3a8a;
