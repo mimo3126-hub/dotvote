@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 도트 / 카드 / 진입 애니메이션 (원형 프로토타입에서 이식) */
+@keyframes dotPop {
+  0%   { transform: translate(-50%, -50%) scale(0); }
+  60%  { transform: translate(-50%, -50%) scale(1.4); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes ripple {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(4);   opacity: 0;   }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes heartbeat {
+  0%, 70%, 100% { transform: scale(1); }
+  14%           { transform: scale(1.08); }
+  35%           { transform: scale(1.04); }
+}
+@keyframes slideR {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+@keyframes slideL {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.anim-fade-up   { animation: fadeUp .5s ease; }
+.anim-bounce    { animation: bounce 2s ease infinite; }
+.anim-heartbeat { animation: heartbeat 2.5s ease infinite; }
+.anim-slide-r   { animation: slideR .35s ease; }
+.anim-slide-l   { animation: slideL .35s ease; }
+.anim-glow      { animation: glow 1.5s ease-in-out infinite; }
+.anim-dot-pop   { animation: dotPop .35s ease; }
+.anim-ripple    { animation: ripple .65s ease-out forwards; }
+
+.touch-card {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.touch-card:active { transform: scale(.98); transition: transform .1s; }
+
 @layer base {
   :root {
     --color-primary: #1e3a8a;

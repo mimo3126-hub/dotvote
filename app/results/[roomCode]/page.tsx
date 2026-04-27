@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { colorFor } from '@/lib/utils/option-colors'
 import type {
   AggregatedResult,
   BallotOption,
@@ -406,31 +407,48 @@ export default function ResultsPage() {
             아직 투표가 없습니다
           </p>
         ) : (
-          results.map((r, idx) => {
+          results.map((r, rank) => {
+            const originalIdx = options.findIndex((o) => o.id === r.option_id)
+            const c = colorFor(originalIdx >= 0 ? originalIdx : rank)
             const widthDigital = (r.digital / maxTotal) * 100
             const widthAnalog = (r.analog / maxTotal) * 100
+            const isTop = rank === 0 && r.total > 0
             return (
-              <div key={r.option_id} className="border-2 border-gray-200 rounded-xl p-4">
+              <div
+                key={r.option_id}
+                className="rounded-xl p-4 transition-all"
+                style={{
+                  backgroundColor: isTop ? `${c.bg}15` : 'white',
+                  border: `2px solid ${isTop ? `${c.light}66` : '#e5e7eb'}`,
+                }}
+              >
                 <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
-                  <h3 className="text-elder-lg font-bold">
-                    <span className="text-gray-400 mr-2">{idx + 1}위</span>
-                    {r.label}
+                  <h3 className="text-elder-lg font-bold flex items-center gap-2">
+                    {isTop && <span className="text-2xl">👑</span>}
+                    <span
+                      className="rounded-full w-8 h-8 inline-flex items-center justify-center text-white text-elder-sm font-bold"
+                      style={{ backgroundColor: c.light }}
+                    >
+                      {originalIdx + 1}
+                    </span>
+                    <span className="text-gray-400">{rank + 1}위</span>
+                    <span>{r.label}</span>
                   </h3>
-                  <p className="text-elder-xl font-bold text-blue-900">
+                  <p className="text-elder-xl font-bold" style={{ color: c.bg }}>
                     {r.total}
                     <span className="text-elder-sm text-gray-500 font-normal"> 도트</span>
                   </p>
                 </div>
                 <div className="bg-gray-100 rounded-lg h-12 overflow-hidden flex">
                   <div
-                    className="bg-blue-700 h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
-                    style={{ width: `${widthDigital}%` }}
+                    className="h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
+                    style={{ width: `${widthDigital}%`, backgroundColor: c.bg }}
                   >
                     {r.digital > 0 && r.digital}
                   </div>
                   <div
-                    className="bg-orange-500 h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
-                    style={{ width: `${widthAnalog}%` }}
+                    className="h-full flex items-center px-3 text-white font-bold text-elder-sm transition-all"
+                    style={{ width: `${widthAnalog}%`, backgroundColor: c.light }}
                   >
                     {r.analog > 0 && r.analog}
                   </div>
