@@ -687,12 +687,12 @@
   <div class="api-settings-section">
     <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:var(--text);">⚙ AI 다듬기 설정</div>
     <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">
-      Anthropic API 키를 입력하면 AI 다듬기 기능을 바로 사용할 수 있습니다.<br>
+      Google Gemini API 키를 입력하면 AI 다듬기를 무료로 사용할 수 있습니다. (결제 정보 불필요)<br>
       키는 이 브라우저에만 저장되며 외부로 전송되지 않습니다.<br>
-      키 발급: <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a> → API Keys
+      <b>키 발급 방법:</b> <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com/apikey</a> → <b>Create API key</b> (Google 계정만 있으면 됨)
     </div>
     <div class="api-key-row">
-      <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+      <input type="password" id="api-key-input" placeholder="AIza...">
       <button class="api-key-save" id="api-key-save-btn">저장</button>
     </div>
     <div id="api-key-status" style="font-size:12px;color:var(--text-soft);margin-top:6px;"></div>
@@ -906,9 +906,9 @@ $('ai-polish-btn').addEventListener('click', async () => {
 
   // Claude.ai 외부 환경이고 Worker URL 미설정 시 → 저장된 API 키 확인
   const isClaudeAi = typeof window !== 'undefined' && window.storage;
-  const storedApiKey = Storage.get('anthropic_api_key') || '';
+  const storedApiKey = Storage.get('gemini_api_key') || '';
   if (!isClaudeAi && !WORKER_URL && !storedApiKey) {
-    showToast('AI 다듬기를 사용하려면 하단 ⚙ 설정에서 API 키를 입력해 주세요.', true);
+    showToast('AI 다듬기를 사용하려면 하단 ⚙ 설정에서 Gemini API 키를 입력해 주세요.', true);
     return;
   }
 
@@ -960,30 +960,35 @@ ${memosSection}
 
 ${filled.map(f => `===${f.label}===\n(다듬어진 ${f.label} 내용)`).join('\n\n')}`;
 
-    // WORKER_URL이 설정되어 있으면 Worker로, 없으면 Anthropic API로 직접 호출
-    const apiUrl = WORKER_URL || "https://api.anthropic.com/v1/messages";
-    const reqHeaders = { "Content-Type": "application/json" };
-    if (!WORKER_URL && storedApiKey) {
-      reqHeaders["x-api-key"] = storedApiKey;
-      reqHeaders["anthropic-version"] = "2023-06-01";
-      reqHeaders["anthropic-dangerous-direct-browser-access"] = "true";
-    }
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: reqHeaders,
-      body: JSON.stringify({
+    // WORKER_URL(Cloudflare 프록시) 또는 Gemini API 직접 호출
+    let apiUrl, reqBody;
+    if (WORKER_URL) {
+      apiUrl = WORKER_URL;
+      reqBody = JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 2000,
         messages: [{ role: "user", content: prompt }]
-      })
+      });
+    } else {
+      apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${storedApiKey}`;
+      reqBody = JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 2000 }
+      });
+    }
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: reqBody
     });
-    if (!response.ok) throw new Error('API 오류 ' + response.status);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || 'API 오류 ' + response.status);
+    }
     const data = await response.json();
-    const text = data.content
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('\n')
-      .trim();
+    const text = WORKER_URL
+      ? data.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim()
+      : (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
 
     // ===라벨=== 형식으로 응답을 파싱
     const parsed = parseLabeledResponse(text, filled.map(f => f.label));
@@ -1390,27 +1395,26 @@ async function generateDocx() {
 setDefaultDate();
 loadActivistInfo();
 
-// ===== API 키 설정 =====
+// ===== API 키 설정 (Gemini) =====
 (function initApiKey() {
   const input = $('api-key-input');
   const status = $('api-key-status');
-  const saved = Storage.get('anthropic_api_key') || '';
+  const saved = Storage.get('gemini_api_key') || '';
   if (saved) {
     input.value = saved;
     input.type = 'password';
-    status.textContent = '✓ API 키가 저장되어 있습니다.';
+    status.textContent = '✓ Gemini API 키가 저장되어 있습니다.';
     status.style.color = 'var(--primary)';
   }
   $('api-key-save-btn').addEventListener('click', () => {
     const val = input.value.trim();
     if (!val) { showToast('API 키를 입력해 주세요.', true); return; }
-    Storage.set('anthropic_api_key', val);
+    Storage.set('gemini_api_key', val);
     input.type = 'password';
     status.textContent = '✓ 저장되었습니다. 이제 AI 다듬기 버튼을 사용하세요.';
     status.style.color = 'var(--primary)';
-    showToast('API 키가 저장되었습니다.');
+    showToast('Gemini API 키가 저장되었습니다.');
   });
-  // 입력 시 평문 표시
   input.addEventListener('focus', () => { input.type = 'text'; });
   input.addEventListener('blur', () => { if (input.value) input.type = 'password'; });
 })();
