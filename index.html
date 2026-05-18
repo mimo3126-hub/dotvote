@@ -1458,11 +1458,35 @@ loadActivistInfo();
     stopRec();
   };
 
-  function toggleRecording(ta, btn) {
+  let micReady = false;
+
+  async function ensureMic() {
+    if (micReady) return true;
+    // 이미 허용됐는지 먼저 확인 (팝업 없이)
+    if (navigator.permissions) {
+      try {
+        const s = await navigator.permissions.query({ name: 'microphone' });
+        if (s.state === 'granted') { micReady = true; return true; }
+      } catch(_) {}
+    }
+    // 아직 허용 안 됐으면 한 번만 요청
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+      micReady = true;
+      return true;
+    } catch(_) {
+      showToast('마이크 권한을 허용해 주세요.', true);
+      return false;
+    }
+  }
+
+  async function toggleRecording(ta, btn) {
     if (activeTextarea) {
       stopRec();
       return;
     }
+    if (!(await ensureMic())) return;
     activeTextarea = ta;
     activeBtn = btn;
     baseValue = ta.value ? ta.value + ' ' : '';
