@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나에게 맞는 해남 절임배추는? | 해남 절임배추</title>
+  <meta property="og:title" content="나에게 맞는 해남 절임배추는?">
+  <meta property="og:description" content="7가지 질문으로 찾는 나만의 해남 절임배추 유형">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --g-deep:   #1A5C38;
+      --g-mid:    #2D8653;
+      --g-light:  #52B788;
+      --g-pale:   #D8F3DC;
+      --g-ultra:  #EEF8F0;
+      --cream:    #FAFFF5;
+      --earth:    #6B4226;
+      --white:    #FFFFFF;
+      --txt:      #1B3A2A;
+      --txt-mid:  #3D6B52;
+      --txt-mute: #7DAA8E;
+      --red-k:    #C0392B;
+      --ease:     cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--cream);
+      color: var(--txt);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── screen management ─── */
+    .screen {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+    .screen.active { display: flex; }
+    .screen.anim-in  { animation: slideUp .45s var(--ease) both; }
+    .screen.anim-out { animation: slideDown .3s var(--ease) both; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes slideDown {
+      from { opacity: 1; transform: translateY(0);    }
+      to   { opacity: 0; transform: translateY(-20px);}
+    }
+
+    /* ─── INTRO ─── */
+    #s-intro {
+      background: linear-gradient(170deg, #0B3320 0%, #1A5C38 45%, #2D8653 75%, #3FAF6A 100%);
+      color: white;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 28px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #s-intro::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(82,183,136,.25) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 10% 90%, rgba(11,51,32,.4) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .intro-leaf {
+      position: absolute;
+      font-size: clamp(80px, 22vw, 200px);
+      opacity: .06;
+      pointer-events: none;
+      user-select: none;
+    }
+    .leaf-tl { top: -20px; left: -30px; transform: rotate(-20deg); }
+    .leaf-br { bottom: -20px; right: -30px; transform: rotate(160deg); }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      margin-bottom: 28px;
+    }
+
+    .intro-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,.2));
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    .intro-title {
+      font-family: 'Noto Serif KR', serif;
+      font-weight: 900;
+      font-size: clamp(24px, 6vw, 40px);
+      line-height: 1.3;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 12px rgba(0,0,0,.2);
+    }
+
+    .intro-sub {
+      font-size: clamp(14px, 3.5vw, 17px);
+      font-weight: 400;
+      line-height: 1.7;
+      opacity: .88;
+      max-width: 360px;
+      margin: 0 auto 36px;
+    }
+
+    .intro-meta {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 44px;
+      opacity: .75;
+      font-size: 13px;
+      font-weight: 300;
+    }
+    .intro-meta span { display: flex; align-items: center; gap: 5px; }
+
+    .btn-start {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      color: var(--g-deep);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 18px 48px;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .btn-start:hover  { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,.28); }
+    .btn-start:active { transform: translateY(0); }
+
+    .intro-footer-note {
+      position: absolute;
+      bottom: 28px;
+      font-size: 11px;
+      opacity: .5;
+      font-weight: 300;
+    }
+
+    /* ─── QUESTION ─── */
+    #s-question {
+      background: var(--cream);
+    }
+
+    .q-header {
+      background: white;
+      border-bottom: 1px solid #e8f4ed;
+      padding: 20px 24px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .q-toprow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .q-brand { font-size: 13px; font-weight: 700; color: var(--g-deep); letter-spacing: .04em; }
+    .q-num   { font-size: 13px; font-weight: 500; color: var(--txt-mute); }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--g-pale);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--g-mid), var(--g-light));
+      border-radius: 100px;
+      transition: width .6s var(--ease);
+    }
+
+    .q-body {
+      flex: 1;
+      padding: 36px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .q-emoji {
+      font-size: 52px;
+      margin-bottom: 18px;
+      animation: popIn .4s var(--ease) both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.6); }
+      to   { opacity: 1; transform: scale(1);  }
+    }
+
+    .q-text {
+      font-family: 'Noto Serif KR', serif;
+      font-weight: 600;
+      font-size: clamp(19px, 4.5vw, 26px);
+      line-height: 1.45;
+      color: var(--txt);
+      margin-bottom: 32px;
+    }
+
+    .q-options {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .opt-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: white;
+      border: 2px solid #e0ede5;
+      border-radius: 18px;
+      padding: 18px 22px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .2s, background .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 2px 8px rgba(26,92,56,.06);
+    }
+    .opt-btn:hover {
+      border-color: var(--g-light);
+      background: #f4fdf6;
+      transform: translateX(4px);
+      box-shadow: 0 6px 20px rgba(26,92,56,.1);
+    }
+    .opt-btn:active {
+      transform: translateX(2px) scale(.99);
+      border-color: var(--g-deep);
+      background: var(--g-pale);
+    }
+    .opt-btn.selected {
+      border-color: var(--g-deep);
+      background: var(--g-pale);
+      box-shadow: 0 6px 20px rgba(26,92,56,.15);
+    }
+
+    .opt-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      background: var(--g-ultra);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .opt-text {
+      font-size: clamp(14px, 3.5vw, 16px);
+      font-weight: 500;
+      color: var(--txt);
+      line-height: 1.5;
+    }
+
+    /* ─── LOADING ─── */
+    #s-loading {
+      background: linear-gradient(155deg, #0B3320 0%, #1A5C38 50%, #2D8653 100%);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      padding: 40px 28px;
+    }
+
+    .loading-icon {
+      font-size: 72px;
+      margin-bottom: 28px;
+      animation: spin 2s linear infinite;
+    }
+    @keyframes spin {
+      0%   { transform: rotate(0deg) scale(1); }
+      50%  { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .loading-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .loading-sub {
+      font-size: 15px;
+      opacity: .75;
+      margin-bottom: 36px;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      background: rgba(255,255,255,.6);
+      border-radius: 50%;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(.8); opacity: .4; }
+      40%            { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* ─── RESULT ─── */
+    #s-result {
+      background: var(--cream);
+    }
+
+    .result-hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px 36px;
+    }
+
+    .result-hero-bg {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(.55) saturate(1.1);
+      transition: background-image .3s;
+    }
+
+    .result-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.1) 60%, transparent 100%);
+    }
+
+    .result-hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+    }
+
+    .result-type-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.2);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      padding: 5px 16px;
+      margin-bottom: 12px;
+    }
+
+    .result-type-emoji {
+      font-size: 60px;
+      display: block;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,.3));
+    }
+
+    .result-type-name {
+      font-family: 'Noto Serif KR', serif;
+      font-weight: 900;
+      font-size: clamp(26px, 6vw, 38px);
+      line-height: 1.2;
+      text-shadow: 0 2px 12px rgba(0,0,0,.3);
+      margin-bottom: 8px;
+    }
+
+    .result-type-tag {
+      font-size: 14px;
+      opacity: .85;
+      font-weight: 300;
+    }
+
+    .result-body {
+      padding: 28px 24px;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .result-card {
+      background: white;
+      border-radius: 24px;
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(26,92,56,.08);
+    }
+
+    .result-desc-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--g-light);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .result-desc {
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--txt-mid);
+      font-weight: 400;
+    }
+
+    .result-highlight {
+      font-family: 'Noto Serif KR', serif;
+      font-weight: 600;
+      color: var(--txt);
+      font-size: 17px;
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .feat-item {
+      background: var(--g-ultra);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .feat-ico { font-size: 22px; flex-shrink: 0; }
+
+    .feat-text { font-size: 13px; line-height: 1.5; color: var(--txt-mid); font-weight: 500; }
+    .feat-label { font-size: 11px; color: var(--txt-mute); margin-bottom: 3px; font-weight: 400; }
+
+    .btn-buy {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--g-deep) 0%, var(--g-mid) 100%);
+      color: white;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 20px;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 24px rgba(26,92,56,.25);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-buy:hover  { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(26,92,56,.32); }
+    .btn-buy:active { transform: translateY(0); }
+
+    .btn-retry {
+      display: block;
+      width: 100%;
+      background: transparent;
+      color: var(--g-deep);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 16px;
+      border: 2px solid var(--g-pale);
+      border-radius: 18px;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 12px;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-retry:hover { background: var(--g-pale); border-color: var(--g-light); }
+
+    .btn-share {
+      display: block;
+      width: 100%;
+      background: var(--g-ultra);
+      color: var(--txt-mid);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 14px;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      text-align: center;
+      transition: background .2s;
+    }
+    .btn-share:hover { background: var(--g-pale); }
+
+    .share-copied {
+      font-size: 13px;
+      color: var(--g-mid);
+      text-align: center;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .share-copied.show { opacity: 1; }
+
+    /* ─── responsive ─── */
+    @media (max-width: 400px) {
+      .feat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ INTRO ════════════════ -->
+<div id="s-intro" class="screen active">
+  <span class="intro-leaf leaf-tl">🥬</span>
+  <span class="intro-leaf leaf-br">🥬</span>
+
+  <div class="badge">🌱 해남 절임배추 테스트</div>
+  <div class="intro-icon">🥬</div>
+
+  <h1 class="intro-title">
+    나에게 딱 맞는<br>해남 절임배추는?
+  </h1>
+  <p class="intro-sub">
+    전남 해남의 청정한 땅에서 자란<br>
+    배추 중 내 입맛에 꼭 맞는<br>절임배추 유형을 찾아드려요.
+  </p>
+
+  <div class="intro-meta">
+    <span>✏️ 7가지 질문</span>
+    <span>⏱ 약 1분</span>
+    <span>🎯 4가지 유형</span>
+  </div>
+
+  <button class="btn-start" onclick="startQuiz()">
+    테스트 시작하기 →
+  </button>
+
+  <p class="intro-footer-note">전라남도 해남군 · 해남배추영농조합</p>
+</div>
+
+
+<!-- ════════════════ QUESTION ════════════════ -->
+<div id="s-question" class="screen">
+  <div class="q-header">
+    <div class="q-toprow">
+      <span class="q-brand">🌿 해남 절임배추</span>
+      <span class="q-num" id="q-num">1 / 7</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:14%"></div>
+    </div>
+  </div>
+
+  <div class="q-body">
+    <div class="q-emoji" id="q-emoji">🥬</div>
+    <h2 class="q-text" id="q-text">질문 텍스트</h2>
+    <div class="q-options" id="q-options"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════ LOADING ════════════════ -->
+<div id="s-loading" class="screen">
+  <div class="loading-icon">🥬</div>
+  <h2 class="loading-title">분석 중...</h2>
+  <p class="loading-sub">해남 절임배추 유형을 찾고 있어요</p>
+  <div class="loading-dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════ RESULT ════════════════ -->
+<div id="s-result" class="screen">
+  <div class="result-hero">
+    <div class="result-hero-bg" id="result-bg"></div>
+    <div class="result-hero-overlay"></div>
+    <div class="result-hero-content">
+      <div class="result-type-badge" id="result-badge">유형</div>
+      <span class="result-type-emoji" id="result-emoji">🥬</span>
+      <h1 class="result-type-name" id="result-name">유형명</h1>
+      <p class="result-type-tag" id="result-tag">태그</p>
+    </div>
+  </div>
+
+  <div class="result-body">
+    <div class="result-card">
+      <div class="result-desc-title">당신의 유형</div>
+      <p class="result-highlight" id="result-highlight">하이라이트</p>
+      <p class="result-desc" id="result-desc">설명 텍스트</p>
+    </div>
+
+    <div class="result-card">
+      <div class="result-desc-title">절임배추 특징</div>
+      <div class="feat-grid" id="feat-grid"></div>
+    </div>
+
+    <button class="btn-buy" id="btn-buy">🛒 지금 구매하기</button>
+    <button class="btn-retry" onclick="restartQuiz()">↩ 다시 테스트하기</button>
+    <button class="btn-share" onclick="shareResult()">🔗 결과 공유하기</button>
+    <p class="share-copied" id="share-copied">링크가 복사되었어요!</p>
+  </div>
+</div>
+
+
+<script>
+// ════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════
+const QUESTIONS = [
+  {
+    emoji: '🍚',
+    text: '평소 김치를 어떻게 즐기시나요?',
+    options: [
+      { icon: '🥢', text: '매일 밥상 위 빠지면 서운한 필수 반찬',         type: 'A' },
+      { icon: '🍲', text: '찌개·볶음밥 등 요리에 잘 익은 김치를 써요',    type: 'M' },
+      { icon: '🥗', text: '건강 신경 쓰며 가끔 챙겨 먹어요',              type: 'J' },
+      { icon: '🥩', text: '고기 쌈 싸거나 특별한 날 곁들여요',            type: 'D' },
+    ],
+  },
+  {
+    emoji: '⭐',
+    text: '김치에서 가장 중요한 것은?',
+    options: [
+      { icon: '💚', text: '씹을수록 살아있는 아삭아삭한 식감',            type: 'A' },
+      { icon: '🫙', text: '깊고 묵직한 발효의 진하고 복잡한 맛',          type: 'M' },
+      { icon: '💧', text: '자극 없이 깔끔하고 담백한 개운함',             type: 'J' },
+      { icon: '🌿', text: '배추 본연의 달콤하고 부드러운 맛',             type: 'D' },
+    ],
+  },
+  {
+    emoji: '🌄',
+    text: '지금 이 순간, 어떤 풍경이 끌리나요?',
+    options: [
+      { icon: '🌱', text: '새벽 이슬 머금은 싱그러운 해남 배추밭',        type: 'A' },
+      { icon: '🏺', text: '겨울 내내 천천히 익어가는 장독 항아리',        type: 'M' },
+      { icon: '🌾', text: '청명한 가을 하늘 아래 청정한 해남 들판',       type: 'J' },
+      { icon: '❄️',  text: '첫서리 맞아 더욱 달아진 배추밭 풍경',         type: 'D' },
+    ],
+  },
+  {
+    emoji: '👨‍👩‍👧‍👦',
+    text: '주로 함께 식사하는 가족은?',
+    options: [
+      { icon: '🧒', text: '식욕 왕성한 아이들과 젊은 가족',               type: 'A' },
+      { icon: '👴', text: '입맛 까다로운 부모님·어르신',                  type: 'M' },
+      { icon: '🏃', text: '건강을 적극 챙기는 중장년 가족',               type: 'J' },
+      { icon: '🌍', text: '김치가 익숙하지 않은 아이나 외국인 가족',      type: 'D' },
+    ],
+  },
+  {
+    emoji: '👨‍🍳',
+    text: '나의 요리 스타일은?',
+    options: [
+      { icon: '🥬', text: '재료 본연의 신선함을 최대한 살려요',           type: 'A' },
+      { icon: '🔥', text: '오래 익혀 깊고 진한 맛을 만들어요',            type: 'M' },
+      { icon: '🌿', text: '자연 재료 그대로, 심플하게 조리해요',          type: 'J' },
+      { icon: '🍯', text: '달콤하게, 누구나 좋아할 맛을 만들어요',        type: 'D' },
+    ],
+  },
+  {
+    emoji: '🧊',
+    text: '내 냉장고 속을 들여다보면?',
+    options: [
+      { icon: '🛒', text: '신선 재료가 가득, 자주 장 봐요',               type: 'A' },
+      { icon: '🫙', text: '발효식품과 저장식품이 가득해요',               type: 'M' },
+      { icon: '💊', text: '저염·저당 건강식품 위주로 채워요',             type: 'J' },
+      { icon: '🍱', text: '온 가족이 좋아하는 반찬들이 있어요',           type: 'D' },
+    ],
+  },
+  {
+    emoji: '🎁',
+    text: '해남 절임배추를 선물한다면 누구에게?',
+    options: [
+      { icon: '👩‍🍳', text: '직접 맛있는 김치를 담그고 싶은 친구',          type: 'A' },
+      { icon: '🏅', text: '진짜 김치 맛 아는 미식가 선배',                 type: 'M' },
+      { icon: '❤️',  text: '건강을 소중히 챙기는 가족',                    type: 'J' },
+      { icon: '🌏', text: '한국 음식이 낯선 외국인 친구',                  type: 'D' },
+    ],
+  },
+];
+
+const RESULTS = {
+  A: {
+    badge:     '아삭 유형',
+    emoji:     '💚',
+    name:      '아삭한 절임배추',
+    tag:       '해남의 생기를 그대로 담은 싱싱함',
+    highlight: '"갓 수확한 해남 배추의 생생한 아삭함, 바로 이게 김치의 첫맛이에요."',
+    desc:      '신선함을 최고의 가치로 여기는 당신에게 딱 맞는 유형이에요. 해남 청정 지역에서 자란 배추를 적절한 천일염으로 절여 아삭아삭한 식감을 최대한 살렸습니다. 갓 담근 겉절이부터 시원한 백김치까지, 신선한 맛을 즐기는 분께 강력 추천드려요.',
+    features: [
+      { ico: '🧂', label: '염도',   val: '2.0% 적정 천일염' },
+      { ico: '⏰', label: '절임',   val: '24시간 자연 저온 절임' },
+      { ico: '💚', label: '식감',   val: '최상의 아삭함 유지' },
+      { ico: '🥗', label: '추천',   val: '겉절이·백김치·생김치' },
+    ],
+    bg: 'https://images.unsplash.com/photo-1576072070036-1c7c7d6e3820?auto=format&fit=crop&w=800&q=80',
+    buy: '#',
+  },
+  M: {
+    badge:     '발효 미식가 유형',
+    emoji:     '🏺',
+    name:      '묵은지용 절임배추',
+    tag:       '시간이 완성하는 깊고 진한 발효의 정수',
+    highlight: '"오래 익힐수록 깊어지는 맛, 발효의 진수를 아는 미식가네요."',
+    desc:      '깊고 진한 발효 맛을 사랑하는 당신을 위해 특별히 설계된 절임 방식입니다. 묵은지 특유의 복잡한 풍미를 이끌어내기 위해 염도와 절임 시간을 최적화했어요. 김치찌개, 묵은지 삼겹살, 김치볶음밥에서 진가를 발휘합니다.',
+    features: [
+      { ico: '🧂', label: '염도',   val: '2.5% 발효 최적 염도' },
+      { ico: '⏰', label: '절임',   val: '36시간 깊은 절임' },
+      { ico: '🔥', label: '활용',   val: '찌개·볶음·수육에 탁월' },
+      { ico: '🫙', label: '보관',   val: '장기 발효·저장에 최적' },
+    ],
+    bg: 'https://images.unsplash.com/photo-1583187158564-8d0b07de3618?auto=format&fit=crop&w=800&q=80',
+    buy: '#',
+  },
+  J: {
+    badge:     '건강 지킴이 유형',
+    emoji:     '💧',
+    name:      '저염 절임배추',
+    tag:       '건강을 생각하는 자연 그대로의 선택',
+    highlight: '"몸을 생각하면서도 맛을 포기하지 않는, 현명한 선택이에요."',
+    desc:      '건강한 식습관을 실천하는 당신에게 딱 맞는 유형입니다. 일반 절임배추보다 나트륨을 30% 낮추면서도 해남 배추 본연의 맛은 그대로 살렸어요. 미네랄이 풍부한 천일염을 사용해 짜지 않고 개운한 김치를 담글 수 있습니다.',
+    features: [
+      { ico: '🧂', label: '염도',   val: '1.5% 저염 건강 설계' },
+      { ico: '💊', label: '효능',   val: '나트륨 30% 절감' },
+      { ico: '🌿', label: '재료',   val: '미네랄 풍부 천일염' },
+      { ico: '❤️', label: '추천',   val: '혈압·신장 건강 관리자' },
+    ],
+    bg: 'https://images.unsplash.com/photo-1518977822534-7049a61ee0c2?auto=format&fit=crop&w=800&q=80',
+    buy: '#',
+  },
+  D: {
+    badge:     '달콤 자연주의 유형',
+    emoji:     '🍯',
+    name:      '단맛 절임배추',
+    tag:       '자연이 주는 달콤함, 누구나 좋아하는 맛',
+    highlight: '"배추 본연의 달콤함을 아는 분이에요. 해남만의 특별한 맛이에요."',
+    desc:      '해남의 독특한 기후와 일교차로 자연적으로 단맛이 높아진 배추만 엄선했습니다. 달달하고 부드러운 식감으로 김치를 처음 접하는 분도, 아이들도 맛있게 즐길 수 있어요. 남녀노소 누구에게나 선물하기 좋은 착한 김치예요.',
+    features: [
+      { ico: '🍯', label: '당도',   val: '자연 단맛 고당도 품종' },
+      { ico: '🌡️', label: '기후',   val: '해남 일교차 최대 활용' },
+      { ico: '👶', label: '추천',   val: '아이·김치 입문자·외국인' },
+      { ico: '🎁', label: '활용',   val: '선물용·명절용 최적' },
+    ],
+    bg: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=800&q=80',
+    buy: '#',
+  },
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let currentQ = 0;
+let scores = { A: 0, M: 0, J: 0, D: 0 };
+
+// ════════════════════════════════════════
+// SCREEN HELPERS
+// ════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active', 'anim-in');
+  });
+  const el = document.getElementById(id);
+  el.classList.add('active', 'anim-in');
+}
+
+// ════════════════════════════════════════
+// QUIZ LOGIC
+// ════════════════════════════════════════
+function startQuiz() {
+  currentQ = 0;
+  scores = { A: 0, M: 0, J: 0, D: 0 };
+  showScreen('s-question');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  const total = QUESTIONS.length;
+
+  document.getElementById('q-num').textContent   = `${currentQ + 1} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${((currentQ + 1) / total) * 100}%`;
+  document.getElementById('q-emoji').textContent = q.emoji;
+  document.getElementById('q-text').textContent  = q.text;
+
+  const container = document.getElementById('q-options');
+  container.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className   = 'opt-btn';
+    btn.dataset.type = opt.type;
+    btn.innerHTML   = `<div class="opt-icon">${opt.icon}</div><div class="opt-text">${opt.text}</div>`;
+    btn.addEventListener('click', () => selectAnswer(opt.type, btn));
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswer(type, btnEl) {
+  // 선택 애니메이션
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  btnEl.classList.add('selected');
+
+  scores[type]++;
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < QUESTIONS.length) {
+      renderQuestion();
+    } else {
+      showScreen('s-loading');
+      setTimeout(showResult, 2200);
+    }
+  }, 420);
+}
+
+function showResult() {
+  const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const r = RESULTS[winner];
+
+  document.getElementById('result-badge').textContent    = r.badge;
+  document.getElementById('result-emoji').textContent    = r.emoji;
+  document.getElementById('result-name').textContent     = r.name;
+  document.getElementById('result-tag').textContent      = r.tag;
+  document.getElementById('result-highlight').textContent = r.highlight;
+  document.getElementById('result-desc').textContent     = r.desc;
+
+  const bg = document.getElementById('result-bg');
+  bg.style.backgroundImage = `url('${r.bg}')`;
+
+  // fallback gradient if image fails
+  const img = new Image();
+  img.onerror = () => {
+    const grads = {
+      A: 'linear-gradient(135deg,#1A5C38,#52B788)',
+      M: 'linear-gradient(135deg,#3B2A0B,#8B5E3C)',
+      J: 'linear-gradient(135deg,#0B3B5C,#2D8653)',
+      D: 'linear-gradient(135deg,#5C3B0B,#C0813A)',
+    };
+    bg.style.backgroundImage = grads[winner];
+  };
+  img.src = r.bg;
+
+  // features
+  const grid = document.getElementById('feat-grid');
+  grid.innerHTML = '';
+  r.features.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'feat-item';
+    div.innerHTML = `<div class="feat-ico">${f.ico}</div><div class="feat-text"><div class="feat-label">${f.label}</div>${f.val}</div>`;
+    grid.appendChild(div);
+  });
+
+  document.getElementById('btn-buy').onclick = () => window.open(r.buy, '_blank');
+
+  showScreen('s-result');
+}
+
+function restartQuiz() {
+  startQuiz();
+}
+
+function shareResult() {
+  const url = window.location.href;
+  if (navigator.share) {
+    navigator.share({
+      title: '나에게 맞는 해남 절임배추는?',
+      text: '7가지 질문으로 찾는 나만의 절임배추 유형!',
+      url,
+    });
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const msg = document.getElementById('share-copied');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2500);
+    });
+  }
+}
+</script>
+</body>
+</html>
